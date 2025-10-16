@@ -2,13 +2,14 @@
 
 import { ArrowLeft, Pause, Play, Plus, Scissors, SkipBack, SkipForward, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { useVideoRemount } from '@/hooks/useVideoRemount';
 
 type TimeRange = { start: string; end: string };
 
@@ -47,6 +48,7 @@ const EditorPage = () => {
     const [progress, setProgress] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [timeInput, setTimeInput] = useState('');
+    const showVideo = useVideoRemount(videoPath);
 
     const handleLoadedMetadata = useCallback(() => {
         if (videoRef.current) {
@@ -62,17 +64,17 @@ const EditorPage = () => {
 
     const togglePlayPause = useCallback(async () => {
         if (videoRef.current) {
-            if (isPlaying) {
-                videoRef.current.pause();
-            } else {
-                try {
+            try {
+                if (videoRef.current.paused) {
                     await videoRef.current.play();
-                } catch (error) {
-                    console.error('Play failed:', error);
+                } else {
+                    videoRef.current.pause();
                 }
+            } catch (error) {
+                console.error('Play/Pause failed:', error);
             }
         }
-    }, [isPlaying]);
+    }, []);
 
     const handleSeek = useCallback(
         (e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
@@ -268,17 +270,29 @@ const EditorPage = () => {
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
                         <Card className="border-slate-800 bg-slate-900/50 p-4">
-                            <video
-                                ref={videoRef}
-                                src={`/api/videos/stream?path=${encodeURIComponent(videoPath)}`}
-                                onLoadedMetadata={handleLoadedMetadata}
-                                onTimeUpdate={handleTimeUpdate}
-                                className="w-full rounded-lg bg-black"
-                                onPlay={() => setIsPlaying(true)}
-                                onPause={() => setIsPlaying(false)}
-                            >
-                                <track kind="captions" />
-                            </video>
+                            {showVideo && (
+                                <video
+                                    key={videoPath}
+                                    ref={videoRef}
+                                    src={`/api/videos/stream?path=${encodeURIComponent(videoPath)}`}
+                                    onLoadedMetadata={handleLoadedMetadata}
+                                    onTimeUpdate={handleTimeUpdate}
+                                    onPlay={() => {
+                                        setIsPlaying(true);
+                                    }}
+                                    onPause={() => {
+                                        setIsPlaying(false);
+                                    }}
+                                    className="w-full rounded-lg bg-black"
+                                >
+                                    <track kind="captions" />
+                                </video>
+                            )}
+                            {!showVideo && (
+                                <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-black">
+                                    <p className="text-slate-400 text-sm">Loading video...</p>
+                                </div>
+                            )}
 
                             <div className="mt-4 space-y-3">
                                 <div className="flex items-center gap-3">
