@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import AttractButton from '@/components/kokonutui/attract-button';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,13 +45,13 @@ const HomePage = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleList()}
                             className="h-12 flex-1 border-slate-700 bg-slate-800 text-white placeholder:text-slate-500"
                         />
-                        <Button
+                        <AttractButton
                             onClick={handleList}
                             disabled={!inputPath.trim()}
                             className="h-12 bg-blue-600 px-8 hover:bg-blue-700"
-                        >
-                            List
-                        </Button>
+                            text="List Videos"
+                            hoverText="Browse Videos"
+                        />
                     </div>
                 </Card>
             </div>

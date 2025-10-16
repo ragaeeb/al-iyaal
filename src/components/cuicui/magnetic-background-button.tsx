@@ -111,7 +111,7 @@ export function MagneticBackgroundButton({
                 className={cn(
                     '-z-10 pointer-events-none absolute inset-0 rounded-lg',
                     'before:absolute before:inset-0 before:rounded-lg before:transition-all',
-                    'before:bg-muted dark:before:bg-muted',
+                    'before:bg-neutral-200 dark:before:bg-neutral-700',
                     isHovered ? 'duration-150 ease-out' : 'duration-100 ease-in',
                     isHovered
                         ? 'before:scale-100 before:opacity-100 before:duration-100 before:ease-in'
