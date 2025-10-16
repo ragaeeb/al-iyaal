@@ -1,253 +1,73 @@
 'use client';
 
-import { ArrowLeft, Pause, Play, Plus, Scissors, SkipBack, SkipForward, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { useCallback, useMemo, useState } from 'react';
+import { ProcessingProgress } from '@/components/ProcessingProgress';
+import { SubtitlesPanel } from '@/components/SubtitlesPanel';
+import { TimeRanges } from '@/components/TimeRanges';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
+import { VideoControls } from '@/components/VideoControls';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { useSubtitles } from '@/hooks/useSubtitles';
+import { useVideoPlayer } from '@/hooks/useVideoPlayer';
+import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { useVideoRemount } from '@/hooks/useVideoRemount';
-
-type TimeRange = { start: string; end: string };
-
-const formatTime = (seconds: number): string => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-};
-
-const parseTimeToSeconds = (time: string): number => {
-    const parts = time.split(':').map(Number);
-    let seconds = 0;
-    let multiplier = 1;
-
-    for (let i = parts.length - 1; i >= 0; i--) {
-        seconds += parts[i] * multiplier;
-        multiplier *= 60;
-    }
-
-    return seconds;
-};
+import { parseTimeToSeconds } from '@/lib/srtParsing';
+import type { TimeRange } from '@/types/subtitles';
 
 const EditorPage = () => {
     const searchParams = useSearchParams();
+    const [ranges, setRanges] = useState<TimeRange[]>([]);
     const videoPath = searchParams.get('path') || '';
     const router = useRouter();
-    const videoRef = useRef<HTMLVideoElement>(null);
 
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [ranges, setRanges] = useState<TimeRange[]>([]);
-    const [rangeInput, setRangeInput] = useState('');
-    const [processing, setProcessing] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [timeInput, setTimeInput] = useState('');
+    const {
+        videoRef,
+        isPlaying,
+        setIsPlaying,
+        currentTime,
+        duration,
+        handleLoadedMetadata,
+        handleTimeUpdate,
+        togglePlayPause,
+        skipTime,
+        seekTo,
+    } = useVideoPlayer();
+
+    const { subtitles, flaggedSubtitles, analyzing, handleSubtitleDrop, handleAnalyze, clearSubtitles } =
+        useSubtitles(videoPath);
+
+    const { processing, progress, handleProcess } = useVideoProcessing(videoPath, ranges);
+
     const showVideo = useVideoRemount(videoPath);
 
-    const handleLoadedMetadata = useCallback(() => {
-        if (videoRef.current) {
-            setDuration(videoRef.current.duration);
-        }
+    const currentSubtitle = useMemo(() => {
+        return subtitles.find((sub) => currentTime >= sub.startTime && currentTime <= sub.endTime);
+    }, [subtitles, currentTime]);
+
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
     }, []);
 
-    const handleTimeUpdate = useCallback(() => {
-        if (videoRef.current) {
-            setCurrentTime(videoRef.current.currentTime);
-        }
-    }, []);
-
-    const togglePlayPause = useCallback(async () => {
-        if (videoRef.current) {
-            try {
-                if (videoRef.current.paused) {
-                    await videoRef.current.play();
-                } else {
-                    videoRef.current.pause();
-                }
-            } catch (error) {
-                console.error('Play/Pause failed:', error);
-            }
-        }
-    }, []);
-
-    const handleSeek = useCallback(
-        (e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
-            if (!videoRef.current) {
-                return;
-            }
-            // For keyboard events, only respond to Enter or Space
-            if ('key' in e) {
-                if (e.key !== 'Enter' && e.key !== ' ') {
-                    return;
-                }
-            }
-
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pos = ((e as React.MouseEvent).clientX - rect.left) / rect.width;
-            const newTime = pos * duration;
-            videoRef.current.currentTime = newTime;
-            setCurrentTime(newTime);
+    const handleSeekToRange = useCallback(
+        (range: { start: string; end: string }) => {
+            const time = parseTimeToSeconds(range.start);
+            seekTo(time);
         },
-        [duration],
+        [seekTo],
     );
 
-    const handleMouseDown = useCallback(() => {
-        setIsDragging(true);
+    const addRange = useCallback((range: TimeRange) => {
+        setRanges((prev) => prev.concat(range));
     }, []);
 
-    const handleMouseUp = useCallback(() => {
-        setIsDragging(false);
+    console.log('prev ranges', ranges);
+
+    const removeRange = useCallback((range: TimeRange) => {
+        setRanges((prev) => prev.filter((r) => r !== range));
     }, []);
-
-    const handleMouseMove = useCallback(
-        (e: React.MouseEvent<HTMLDivElement>) => {
-            if (isDragging && videoRef.current) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const pos = ((e as React.MouseEvent).clientX - rect.left) / rect.width;
-                const newTime = Math.max(0, Math.min(pos * duration, duration));
-                videoRef.current.currentTime = newTime;
-                setCurrentTime(newTime);
-            }
-        },
-        [isDragging, duration],
-    );
-
-    const skipTime = useCallback(
-        (seconds: number) => {
-            if (videoRef.current) {
-                const newTime = Math.max(0, Math.min(videoRef.current.currentTime + seconds, duration));
-                videoRef.current.currentTime = newTime;
-                setCurrentTime(newTime);
-            }
-        },
-        [duration],
-    );
-
-    const handleTimeInputChange = useCallback(
-        (value: string) => {
-            setTimeInput(value);
-            const match = value.match(/^(\d{1,2}):(\d{2}):(\d{2})$|^(\d{1,2}):(\d{2})$/);
-            if (match && videoRef.current) {
-                const seconds = parseTimeToSeconds(value);
-                if (seconds <= duration) {
-                    videoRef.current.currentTime = seconds;
-                    setCurrentTime(seconds);
-                }
-            }
-        },
-        [duration],
-    );
-
-    const addRange = useCallback(() => {
-        const match = rangeInput.match(/^(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})-(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})$/);
-        if (match) {
-            setRanges((prev) => [...prev, { end: match[2], start: match[1] }]);
-            setRangeInput('');
-        }
-    }, [rangeInput]);
-
-    const handleScissorsClick = useCallback(() => {
-        const currentFormatted = formatTime(currentTime);
-
-        if (!rangeInput.trim()) {
-            setRangeInput(currentFormatted);
-        } else if (!rangeInput.includes('-')) {
-            const newRange = `${rangeInput}-${currentFormatted}`;
-            const match = newRange.match(/^(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})-(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})$/);
-            if (match) {
-                setRanges((prev) => [...prev, { end: match[2], start: match[1] }]);
-                setRangeInput('');
-            }
-        }
-    }, [currentTime, rangeInput]);
-
-    const seekToRange = useCallback((range: TimeRange) => {
-        const startSeconds = parseTimeToSeconds(range.start);
-        if (videoRef.current) {
-            videoRef.current.currentTime = startSeconds;
-            setCurrentTime(startSeconds);
-        }
-    }, []);
-
-    const handleProcess = useCallback(async () => {
-        if (ranges.length === 0) {
-            toast.error('Please add at least one time range');
-            return;
-        }
-
-        setProcessing(true);
-        setProgress(0);
-
-        try {
-            const response = await fetch('/api/videos/process', {
-                body: JSON.stringify({ path: videoPath, ranges }),
-                headers: { 'Content-Type': 'application/json' },
-                method: 'POST',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to start processing');
-            }
-
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-
-            if (!reader) {
-                throw new Error('No response body');
-            }
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    break;
-                }
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
-
-                        if (data.progress !== undefined) {
-                            setProgress(data.progress);
-                        }
-
-                        if (data.complete) {
-                            setProcessing(false);
-                            setProgress(100);
-
-                            toast.success('Video processed successfully!', {
-                                action: {
-                                    label: 'Open',
-                                    onClick: () => {
-                                        window.open(`file://${data.outputPath}`, '_blank');
-                                    },
-                                },
-                            });
-                        }
-
-                        if (data.error) {
-                            throw new Error(data.error);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            setProcessing(false);
-            toast.error(`Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }, [videoPath, ranges]);
-
-    const currentTimeFormatted = useMemo(() => formatTime(currentTime), [currentTime]);
-    const durationFormatted = useMemo(() => formatTime(duration), [duration]);
-    const progressPercent = useMemo(() => (currentTime / duration) * 100 || 0, [currentTime, duration]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -270,177 +90,49 @@ const EditorPage = () => {
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
                         <Card className="border-slate-800 bg-slate-900/50 p-4">
-                            {showVideo && (
-                                <video
-                                    key={videoPath}
-                                    ref={videoRef}
-                                    src={`/api/videos/stream?path=${encodeURIComponent(videoPath)}`}
-                                    onLoadedMetadata={handleLoadedMetadata}
-                                    onTimeUpdate={handleTimeUpdate}
-                                    onPlay={() => {
-                                        setIsPlaying(true);
-                                    }}
-                                    onPause={() => {
-                                        setIsPlaying(false);
-                                    }}
-                                    className="w-full rounded-lg bg-black"
-                                >
-                                    <track kind="captions" />
-                                </video>
-                            )}
-                            {!showVideo && (
-                                <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-black">
-                                    <p className="text-slate-400 text-sm">Loading video...</p>
-                                </div>
-                            )}
+                            <VideoPlayer
+                                videoPath={videoPath}
+                                videoRef={videoRef}
+                                currentSubtitle={currentSubtitle}
+                                onLoadedMetadata={handleLoadedMetadata}
+                                onTimeUpdate={handleTimeUpdate}
+                                onPlay={() => setIsPlaying(true)}
+                                onPause={() => setIsPlaying(false)}
+                                showVideo={showVideo}
+                            />
 
-                            <div className="mt-4 space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        size="icon"
-                                        onClick={() => skipTime(-5)}
-                                        className="h-9 w-9 flex-shrink-0 bg-slate-700 hover:bg-slate-600"
-                                    >
-                                        <SkipBack className="h-4 w-4" />
-                                    </Button>
-
-                                    <Button
-                                        size="icon"
-                                        onClick={togglePlayPause}
-                                        className="h-9 w-9 flex-shrink-0 bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        {isPlaying ? (
-                                            <Pause className="h-4 w-4" />
-                                        ) : (
-                                            <Play className="ml-0.5 h-4 w-4" />
-                                        )}
-                                    </Button>
-
-                                    <Button
-                                        size="icon"
-                                        onClick={() => skipTime(5)}
-                                        className="h-9 w-9 flex-shrink-0 bg-slate-700 hover:bg-slate-600"
-                                    >
-                                        <SkipForward className="h-4 w-4" />
-                                    </Button>
-
-                                    <div className="flex-1">
-                                        <div
-                                            onMouseDown={(e) => {
-                                                handleMouseDown();
-                                                handleSeek(e);
-                                            }}
-                                            onMouseUp={handleMouseUp}
-                                            onMouseMove={handleMouseMove}
-                                            onMouseLeave={handleMouseUp}
-                                            onKeyDown={handleSeek}
-                                            role="slider"
-                                            tabIndex={0}
-                                            aria-label="Video progress"
-                                            aria-valuemin={0}
-                                            aria-valuemax={duration}
-                                            aria-valuenow={currentTime}
-                                            className="group relative h-2 cursor-pointer rounded-full bg-slate-700"
-                                        >
-                                            <div
-                                                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-                                                style={{ width: `${progressPercent}%` }}
-                                            />
-                                            <div
-                                                className="-translate-y-1/2 absolute top-1/2 h-4 w-4 rounded-full bg-white shadow-lg transition-transform group-hover:scale-125"
-                                                style={{ left: `calc(${progressPercent}% - 8px)` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-shrink-0 items-center gap-2">
-                                        <Input
-                                            value={timeInput || currentTimeFormatted}
-                                            onChange={(e) => handleTimeInputChange(e.target.value)}
-                                            onFocus={() => setTimeInput(currentTimeFormatted)}
-                                            onBlur={() => setTimeInput('')}
-                                            className="h-8 w-24 border-slate-700 bg-slate-800 px-2 text-center text-slate-400 text-xs tabular-nums"
-                                        />
-                                        <span className="text-slate-500 text-xs">/</span>
-                                        <span className="text-slate-400 text-xs tabular-nums">{durationFormatted}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <VideoControls
+                                isPlaying={isPlaying}
+                                currentTime={currentTime}
+                                duration={duration}
+                                onTogglePlayPause={togglePlayPause}
+                                onSkipTime={skipTime}
+                                onSeek={seekTo}
+                            />
                         </Card>
 
-                        {processing && (
-                            <Card className="border-slate-800 bg-slate-900/50 p-4">
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-400">Processing video...</span>
-                                        <span className="font-medium text-blue-400">{progress}%</span>
-                                    </div>
-                                    <Progress value={progress} className="h-2" />
-                                </div>
-                            </Card>
-                        )}
+                        {processing && <ProcessingProgress progress={progress} />}
                     </div>
 
                     <div className="space-y-4">
-                        <Card className="border-slate-800 bg-slate-900/50 p-4">
-                            <h2 className="mb-3 flex items-center gap-2 font-semibold text-lg text-white">
-                                <Button
-                                    onClick={handleScissorsClick}
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 hover:text-blue-300"
-                                >
-                                    <Scissors className="h-4 w-4" />
-                                </Button>
-                                Time Ranges
-                            </h2>
+                        <TimeRanges
+                            ranges={ranges}
+                            onAddRange={addRange}
+                            currentTime={currentTime}
+                            onRemoveRange={removeRange}
+                            onSeekToRange={handleSeekToRange}
+                        />
 
-                            <div className="space-y-3">
-                                <div className="flex gap-2">
-                                    <Input
-                                        value={rangeInput}
-                                        onChange={(e) => setRangeInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && addRange()}
-                                        placeholder="0:11-2:15"
-                                        className="h-9 border-slate-700 bg-slate-800 text-white placeholder:text-slate-500"
-                                    />
-                                    <Button
-                                        onClick={addRange}
-                                        size="icon"
-                                        className="h-9 w-9 flex-shrink-0 bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-
-                                <div className="max-h-[500px] space-y-1.5 overflow-y-auto">
-                                    {ranges.map((range) => {
-                                        const rangeId = `${range.start}-${range.end}`;
-                                        return (
-                                            <Badge
-                                                key={rangeId}
-                                                variant="secondary"
-                                                className="group w-full cursor-pointer justify-between bg-slate-800 px-3 py-2 font-normal text-sm hover:bg-slate-700"
-                                                onClick={() => seekToRange(range)}
-                                            >
-                                                <span className="text-white">
-                                                    {range.start} - {range.end}
-                                                </span>
-                                                <X
-                                                    className="h-3.5 w-3.5 text-slate-400 transition-colors hover:text-red-400"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setRanges((prev) =>
-                                                            prev.filter((r) => `${r.start}-${r.end}` !== rangeId),
-                                                        );
-                                                    }}
-                                                />
-                                            </Badge>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </Card>
+                        <SubtitlesPanel
+                            subtitles={subtitles}
+                            flaggedSubtitles={flaggedSubtitles}
+                            analyzing={analyzing}
+                            onDrop={handleSubtitleDrop}
+                            onDragOver={handleDragOver}
+                            onAnalyze={handleAnalyze}
+                            onClear={clearSubtitles}
+                            onSeekToTime={seekTo}
+                        />
                     </div>
                 </div>
             </div>
