@@ -10,7 +10,7 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { FolderInputIcon, Magnet } from 'lucide-react';
+import { FolderInputIcon } from 'lucide-react';
 import { motion, useAnimation } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';

@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import GlowText from '@/components/cuicui/glow-text';
+import { MainMenusGradientCard } from '@/components/cuicui/gradient-card';
 import AttractButton from '@/components/kokonutui/attract-button';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
@@ -29,13 +30,13 @@ const HomePage = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="container mx-auto max-w-5xl px-4 py-16">
                 <div className="mb-12 text-center">
-                    <h1 className="mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text font-bold text-5xl text-transparent">
-                        Video Editor
-                    </h1>
-                    <p className="text-lg text-slate-400">Select a video file to begin editing</p>
+                    <GlowText className="mb-4 py-2 font-bold text-5xl">al-ʿIyāl Video Editor</GlowText>
                 </div>
 
-                <Card className="border-slate-800 bg-slate-900/50 p-8 backdrop-blur">
+                <MainMenusGradientCard
+                    title="Select a video file or folder to begin editing"
+                    className="border-slate-800 bg-slate-900/50 p-8 backdrop-blur"
+                >
                     <div className="flex gap-3">
                         <Input
                             type="text"
@@ -53,7 +54,7 @@ const HomePage = () => {
                             hoverText="Browse Videos"
                         />
                     </div>
-                </Card>
+                </MainMenusGradientCard>
             </div>
         </div>
     );
