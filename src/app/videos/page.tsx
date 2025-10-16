@@ -3,6 +3,7 @@
 import { Clock, FileText, HardDrive, Video } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { CascadeLoader } from '@/components/loaders/CascadeLoader';
 import { Card } from '@/components/ui/card';
 
 type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
@@ -48,7 +49,7 @@ const VideosPage = () => {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-                <p className="text-lg text-slate-400">Loading videos...</p>
+                <CascadeLoader />
             </div>
         );
     }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { parseSrt } from '@/lib/srtParsing';
-import type { FlaggedSubtitle, SubtitleEntry } from '@/types/subtitles';
+import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
 
 export const useSubtitles = (srtPath?: string) => {
     const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
@@ -46,69 +46,72 @@ export const useSubtitles = (srtPath?: string) => {
         }
     }, []);
 
-    const handleAnalyze = useCallback(async () => {
-        if (subtitles.length === 0) {
-            toast.error('No subtitles to analyze');
-            return;
-        }
-
-        setAnalyzing(true);
-
-        try {
-            const response = await fetch('/api/subtitles/analyze', {
-                body: JSON.stringify({ subtitles }),
-                headers: { 'Content-Type': 'application/json' },
-                method: 'POST',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to start analysis');
+    const handleAnalyze = useCallback(
+        async (strategy: AnalysisStrategy) => {
+            if (subtitles.length === 0) {
+                toast.error('No subtitles to analyze');
+                return;
             }
 
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
+            setAnalyzing(true);
 
-            if (!reader) {
-                throw new Error('No response body');
-            }
+            try {
+                const response = await fetch('/api/subtitles/analyze', {
+                    body: JSON.stringify({ strategy, subtitles }),
+                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                });
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    break;
+                if (!response.ok) {
+                    throw new Error('Failed to start analysis');
                 }
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n\n');
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
+                if (!reader) {
+                    throw new Error('No response body');
+                }
 
-                        if (data.status === 'analyzing') {
-                            toast.info('Analyzing subtitles...');
-                        } else if (data.status === 'retrying') {
-                            toast.info('Retrying analysis...');
-                        } else if (data.complete) {
-                            setFlaggedSubtitles(data.flagged);
-                            setAnalyzing(false);
-                            const count = data.flagged.length;
-                            if (count === 0) {
-                                toast.success('No concerning content found');
-                            } else {
-                                toast.warning(`Found ${count} concerning ${count === 1 ? 'item' : 'items'}`);
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.status === 'analyzing') {
+                                toast.info('Analyzing subtitles...');
+                            } else if (data.status === 'retrying') {
+                                toast.info('Retrying analysis...');
+                            } else if (data.complete) {
+                                setFlaggedSubtitles(data.flagged);
+                                setAnalyzing(false);
+                                const count = data.flagged.length;
+                                if (count === 0) {
+                                    toast.success('No concerning content found');
+                                } else {
+                                    toast.warning(`Found ${count} concerning ${count === 1 ? 'item' : 'items'}`);
+                                }
+                            } else if (data.error) {
+                                throw new Error(data.error);
                             }
-                        } else if (data.error) {
-                            throw new Error(data.error);
                         }
                     }
                 }
+            } catch (error) {
+                setAnalyzing(false);
+                toast.error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
-        } catch (error) {
-            setAnalyzing(false);
-            toast.error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }, [subtitles]);
+        },
+        [subtitles],
+    );
 
     const clearSubtitles = useCallback(() => {
         setSubtitles([]);

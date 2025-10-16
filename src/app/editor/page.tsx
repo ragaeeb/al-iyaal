@@ -15,7 +15,7 @@ import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { useVideoRemount } from '@/hooks/useVideoRemount';
 import { parseTimeToSeconds } from '@/lib/srtParsing';
-import type { TimeRange } from '@/types/subtitles';
+import type { TimeRange } from '@/types';
 
 const EditorPage = () => {
     const searchParams = useSearchParams();

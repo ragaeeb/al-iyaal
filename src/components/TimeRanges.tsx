@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CAPTURE_TIME_RANGE_PATTERN } from '@/lib/constants';
 import { formatTime } from '@/lib/srtParsing';
-import type { TimeRange } from '@/types/subtitles';
+import type { TimeRange } from '@/types';
+import SlicedText from './kokonutui/sliced-text';
 import SubmittableInput from './submittable-input';
 
 type TimeRangesProps = Readonly<{
@@ -101,7 +102,7 @@ export const TimeRanges = memo<TimeRangesProps>(({ ranges, onAddRange, onRemoveR
                 >
                     <Scissors className="h-4 w-4" />
                 </Button>
-                Time Ranges
+                <SlicedText text="Time Ranges" />
             </h2>
 
             <div className="space-y-3">

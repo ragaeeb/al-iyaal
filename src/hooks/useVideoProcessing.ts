@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import type { TimeRange } from '@/types/subtitles';
+import type { TimeRange } from '@/types';
 
 export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
     const [processing, setProcessing] = useState(false);

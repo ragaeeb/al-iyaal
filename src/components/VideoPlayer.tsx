@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { SubtitleEntry } from '@/types/subtitles';
+import type { SubtitleEntry } from '@/types';
 
 type VideoPlayerProps = {
     videoPath: string;

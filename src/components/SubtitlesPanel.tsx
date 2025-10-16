@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatTime } from '@/lib/srtParsing';
-import type { FlaggedSubtitle, SubtitleEntry } from '@/types/subtitles';
+import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './cuicui/mac-os-dropdown';
 
 type SubtitlesPanelProps = {
     subtitles: SubtitleEntry[];
@@ -13,7 +14,7 @@ type SubtitlesPanelProps = {
     analyzing: boolean;
     onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-    onAnalyze: () => void;
+    onAnalyze: (strategy: AnalysisStrategy) => void;
     onClear: () => void;
     onSeekToTime: (time: number) => void;
 };
@@ -46,7 +47,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                             Subtitles
                         </h2>
                     </div>
-                    <div
+                    <button
                         onDrop={onDrop}
                         onDragOver={onDragOver}
                         className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-slate-700 border-dashed bg-slate-800/50 transition-colors hover:border-purple-500 hover:bg-slate-800"
@@ -55,7 +56,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                             <Upload className="mx-auto mb-2 h-8 w-8 text-slate-500" />
                             <p className="text-slate-400 text-sm">Drop .srt file here</p>
                         </div>
-                    </div>
+                    </button>
                 </Card>
             );
         }
@@ -67,15 +68,23 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         <Upload className="h-5 w-5 text-purple-400" />
                         Subtitles
                     </h2>
-                    <Button
-                        size="sm"
-                        onClick={onAnalyze}
-                        disabled={analyzing}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    >
-                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                        {analyzing ? 'Analyzing...' : 'Analyze'}
-                    </Button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild={true}>
+                            <Button
+                                size="sm"
+                                disabled={analyzing}
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                            >
+                                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                {analyzing ? 'Analyzing...' : 'Analyze'}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => onAnalyze('fast')}>Quick</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onAnalyze('deep')}>Detailed</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 <div className="space-y-3">
