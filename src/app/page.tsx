@@ -1,21 +1,16 @@
 'use client';
 
-import { Clock, HardDrive, Upload, Video } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-type VideoFile = { name: string; path: string; duration: string; size: string };
-
 const HomePage = () => {
     const router = useRouter();
     const [inputPath, setInputPath] = useState('');
-    const [videos, setVideos] = useState<VideoFile[]>([]);
-    const [loading, setLoading] = useState(false);
 
-    const handleList = async () => {
+    const handleList = () => {
         if (!inputPath.trim()) {
             return;
         }
@@ -24,27 +19,9 @@ const HomePage = () => {
 
         if (isFile) {
             router.push(`/editor?path=${encodeURIComponent(inputPath)}`);
-            return;
+        } else {
+            router.push(`/videos?path=${encodeURIComponent(inputPath)}`);
         }
-
-        setLoading(true);
-        try {
-            const response = await fetch('/api/videos/list', {
-                body: JSON.stringify({ folderPath: inputPath }),
-                headers: { 'Content-Type': 'application/json' },
-                method: 'POST',
-            });
-            const data = await response.json();
-            setVideos(data.videos || []);
-        } catch (error) {
-            console.error('Failed to load videos:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVideoSelect = (video: VideoFile) => {
-        router.push(`/editor?path=${encodeURIComponent(video.path)}`);
     };
 
     return (
@@ -57,7 +34,7 @@ const HomePage = () => {
                     <p className="text-lg text-slate-400">Select a video file to begin editing</p>
                 </div>
 
-                <Card className="mb-8 border-slate-800 bg-slate-900/50 p-8 backdrop-blur">
+                <Card className="border-slate-800 bg-slate-900/50 p-8 backdrop-blur">
                     <div className="flex gap-3">
                         <Input
                             type="text"
@@ -69,51 +46,13 @@ const HomePage = () => {
                         />
                         <Button
                             onClick={handleList}
-                            disabled={loading || !inputPath.trim()}
+                            disabled={!inputPath.trim()}
                             className="h-12 bg-blue-600 px-8 hover:bg-blue-700"
                         >
-                            {loading ? 'Loading...' : 'List'}
+                            List
                         </Button>
                     </div>
                 </Card>
-
-                {videos.length > 0 && (
-                    <div className="space-y-3">
-                        <h2 className="mb-4 flex items-center gap-2 font-semibold text-2xl">
-                            <Video className="h-6 w-6 text-blue-400" />
-                            Videos Found ({videos.length})
-                        </h2>
-                        {videos.map((video, index) => (
-                            <Card
-                                key={index}
-                                onClick={() => handleVideoSelect(video)}
-                                className="cursor-pointer border-slate-800 bg-slate-900/50 p-5 transition-all duration-200 hover:border-blue-500/50 hover:bg-slate-800/50"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-600/20">
-                                            <Video className="h-5 w-5 text-blue-400" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate font-medium text-white">{video.name}</p>
-                                            <p className="truncate text-slate-500 text-sm">{video.path}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-shrink-0 gap-6 text-slate-400 text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4" />
-                                            {video.duration}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <HardDrive className="h-4 w-4" />
-                                            {video.size}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
