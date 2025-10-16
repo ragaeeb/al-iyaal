@@ -3,6 +3,7 @@
 import { Clock, FileText, HardDrive, Video } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ScrambleHover from '@/components/cuicui/scramble';
 import { CascadeLoader } from '@/components/loaders/CascadeLoader';
 import { Card } from '@/components/ui/card';
 
@@ -61,7 +62,15 @@ const VideosPage = () => {
                     <h1 className="mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text font-bold text-5xl text-transparent">
                         Videos
                     </h1>
-                    <p className="text-lg text-slate-400">{folderPath}</p>
+                    <ScrambleHover
+                        text={folderPath}
+                        scrambleSpeed={40}
+                        sequential={true}
+                        revealDirection="start"
+                        useOriginalCharsOnly={false}
+                        className="font-azeretMono text-lg text-slate-400"
+                        characters="abcdefghijklmnopqrstuvwxyz!@#$%^&*()_+-=[]{}|;':\,./<>?"
+                    />
                 </div>
 
                 {videos.length > 0 ? (

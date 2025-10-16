@@ -1,8 +1,8 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import CallToAction from '@/components/cuicui/call-to-action';
 import { ModernAnimatedButton } from '@/components/cuicui/modern-animated-button';
 import { ProcessingProgress } from '@/components/ProcessingProgress';
 import { SubtitlesPanel } from '@/components/SubtitlesPanel';
@@ -73,10 +73,9 @@ const EditorPage = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="container mx-auto max-w-[1800px] px-6 py-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <Button variant="ghost" onClick={() => router.back()} className="text-slate-400">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Videos
-                    </Button>
+                    <CallToAction onClick={router.back} pillText="Videos">
+                        Back to
+                    </CallToAction>
 
                     {!processing && (
                         <Button
