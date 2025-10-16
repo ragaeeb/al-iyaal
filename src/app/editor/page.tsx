@@ -3,6 +3,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import { ModernAnimatedButton } from '@/components/cuicui/modern-animated-button';
 import { ProcessingProgress } from '@/components/ProcessingProgress';
 import { SubtitlesPanel } from '@/components/SubtitlesPanel';
 import { TimeRanges } from '@/components/TimeRanges';
@@ -72,18 +73,27 @@ const EditorPage = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="container mx-auto max-w-[1800px] px-6 py-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <Button variant="ghost" onClick={() => router.back()} className="text-slate-400 hover:text-white">
+                    <Button variant="ghost" onClick={() => router.back()} className="text-slate-400">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Videos
                     </Button>
 
-                    <Button
-                        onClick={handleProcess}
-                        disabled={processing || ranges.length === 0}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                        {processing ? 'Processing...' : 'Process Video'}
-                    </Button>
+                    {!processing && (
+                        <Button
+                            onClick={handleProcess}
+                            disabled={ranges.length === 0}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                            Process Video
+                        </Button>
+                    )}
+                    {processing && (
+                        <ModernAnimatedButton>
+                            <span>Processing</span>
+                            <span className="h-5/6 w-px bg-neutral-700/50" />
+                            <span className="text-neutral-500">Video</span>
+                        </ModernAnimatedButton>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

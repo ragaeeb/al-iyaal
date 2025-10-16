@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { CAPTURE_TIME_RANGE_PATTERN } from '@/lib/constants';
 import { formatTime } from '@/lib/srtParsing';
 import type { TimeRange } from '@/types';
+import { GrowingButton } from './cuicui/growing-button';
 import SlicedText from './kokonutui/sliced-text';
 import SubmittableInput from './submittable-input';
 
@@ -78,7 +79,9 @@ export const TimeRanges = memo<TimeRangesProps>(({ ranges, onAddRange, onRemoveR
     return (
         <Card className="border-slate-800 bg-slate-900/50 p-4">
             <h2 className="mb-3 flex items-center gap-2 font-semibold text-lg text-white">
-                <Button
+                <GrowingButton
+                    className="bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 hover:text-blue-300"
+                    hoverText={`Cut at ${formatTime(currentTime)}`}
                     onClick={() => {
                         if (inputRef.current) {
                             let value = inputRef.current.value.trim();
@@ -96,12 +99,9 @@ export const TimeRanges = memo<TimeRangesProps>(({ ranges, onAddRange, onRemoveR
                             }
                         }
                     }}
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 hover:text-blue-300"
                 >
-                    <Scissors className="h-4 w-4" />
-                </Button>
+                    <Scissors className="h-4 w-4 text-blue-400" />
+                </GrowingButton>
                 <SlicedText text="Time Ranges" />
             </h2>
 
