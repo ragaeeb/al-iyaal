@@ -1,11 +1,11 @@
 'use client';
 
-import { Clock, HardDrive, Video } from 'lucide-react';
+import { Clock, FileText, HardDrive, Video } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 
-type VideoFile = { name: string; path: string; duration: string; size: string };
+type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
 
 const VideosPage = () => {
     const router = useRouter();
@@ -24,11 +24,7 @@ const VideosPage = () => {
 
             setLoading(true);
             try {
-                const response = await fetch('/api/videos/list', {
-                    body: JSON.stringify({ folderPath }),
-                    headers: { 'Content-Type': 'application/json' },
-                    method: 'POST',
-                });
+                const response = await fetch(`/api/videos/list?path=${encodeURIComponent(folderPath)}`);
                 const data = await response.json();
                 setVideos(data.videos || []);
             } catch (error) {
@@ -42,7 +38,11 @@ const VideosPage = () => {
     }, [folderPath, router]);
 
     const handleVideoSelect = (video: VideoFile) => {
-        router.push(`/editor?path=${encodeURIComponent(video.path)}`);
+        let editorUrl = `/editor?path=${encodeURIComponent(video.path)}`;
+        if (video.subtitlePath) {
+            editorUrl += `&srt=${encodeURIComponent(video.subtitlePath)}`;
+        }
+        router.push(editorUrl);
     };
 
     if (loading) {
@@ -69,9 +69,9 @@ const VideosPage = () => {
                             <Video className="h-6 w-6 text-blue-400" />
                             Videos Found ({videos.length})
                         </h2>
-                        {videos.map((video, index) => (
+                        {videos.map((video) => (
                             <Card
-                                key={index}
+                                key={video.path}
                                 onClick={() => handleVideoSelect(video)}
                                 className="cursor-pointer border-slate-800 bg-slate-900/50 p-5 transition-all duration-200 hover:border-blue-500/50 hover:bg-slate-800/50"
                             >
@@ -85,7 +85,12 @@ const VideosPage = () => {
                                             <p className="truncate text-slate-500 text-sm">{video.path}</p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-shrink-0 gap-6 text-slate-400 text-sm">
+                                    <div className="flex flex-shrink-0 items-center gap-6 text-slate-400 text-sm">
+                                        {video.subtitlePath && (
+                                            <div className="flex items-center gap-2" title="Subtitles found">
+                                                <FileText className="h-4 w-4 text-green-400" />
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-2">
                                             <Clock className="h-4 w-4" />
                                             {video.duration}

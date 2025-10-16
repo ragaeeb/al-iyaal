@@ -21,6 +21,7 @@ const EditorPage = () => {
     const searchParams = useSearchParams();
     const [ranges, setRanges] = useState<TimeRange[]>([]);
     const videoPath = searchParams.get('path') || '';
+    const srtPath = searchParams.get('srt') || undefined;
     const router = useRouter();
 
     const {
@@ -37,7 +38,7 @@ const EditorPage = () => {
     } = useVideoPlayer();
 
     const { subtitles, flaggedSubtitles, analyzing, handleSubtitleDrop, handleAnalyze, clearSubtitles } =
-        useSubtitles(videoPath);
+        useSubtitles(srtPath);
 
     const { processing, progress, handleProcess } = useVideoProcessing(videoPath, ranges);
 
@@ -62,8 +63,6 @@ const EditorPage = () => {
     const addRange = useCallback((range: TimeRange) => {
         setRanges((prev) => prev.concat(range));
     }, []);
-
-    console.log('prev ranges', ranges);
 
     const removeRange = useCallback((range: TimeRange) => {
         setRanges((prev) => prev.filter((r) => r !== range));

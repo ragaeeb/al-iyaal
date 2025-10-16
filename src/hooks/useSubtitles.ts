@@ -3,20 +3,22 @@ import { toast } from 'sonner';
 import { parseSrt } from '@/lib/srtParsing';
 import type { FlaggedSubtitle, SubtitleEntry } from '@/types/subtitles';
 
-export const useSubtitles = (videoPath: string) => {
+export const useSubtitles = (srtPath?: string) => {
     const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
     const [flaggedSubtitles, setFlaggedSubtitles] = useState<FlaggedSubtitle[]>([]);
     const [analyzing, setAnalyzing] = useState(false);
 
-    const loadSubtitlesFromPath = useCallback(async (srtPath: string) => {
+    const loadSubtitlesFromPath = useCallback(async (filePath: string) => {
         try {
-            const response = await fetch(`/api/videos/stream?path=${encodeURIComponent(srtPath)}`);
+            const response = await fetch(`/api/files?path=${encodeURIComponent(filePath)}`);
             if (response.ok) {
                 const content = await response.text();
                 const parsedSubtitles = parseSrt(content);
                 setSubtitles(parsedSubtitles);
                 setFlaggedSubtitles([]);
                 toast.success('Subtitles loaded automatically');
+            } else {
+                console.error('Failed to load subtitles: HTTP', response.status);
             }
         } catch (error) {
             console.error('Failed to load subtitles:', error);
@@ -113,12 +115,12 @@ export const useSubtitles = (videoPath: string) => {
         setFlaggedSubtitles([]);
     }, []);
 
+    // Load subtitles from query param if provided
     useEffect(() => {
-        if (videoPath) {
-            const srtPath = videoPath.replace(/\.[^.]+$/, '.srt');
+        if (srtPath) {
             loadSubtitlesFromPath(srtPath);
         }
-    }, [videoPath, loadSubtitlesFromPath]);
+    }, [srtPath, loadSubtitlesFromPath]);
 
     return { analyzing, clearSubtitles, flaggedSubtitles, handleAnalyze, handleSubtitleDrop, subtitles };
 };

@@ -3,7 +3,7 @@ import path from 'node:path';
 import ffmpeg from 'fluent-ffmpeg';
 import { type NextRequest, NextResponse } from 'next/server';
 
-type VideoFile = { name: string; path: string; duration: string; size: string };
+type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
 
 const getVideoDuration = (filePath: string): Promise<number> => {
     return new Promise((resolve, reject) => {
@@ -39,9 +39,20 @@ const formatSize = (bytes: number): string => {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 
-export const POST = async (req: NextRequest) => {
+const checkSubtitleExists = async (videoPath: string): Promise<string | undefined> => {
+    const srtPath = videoPath.replace(/\.[^.]+$/, '.srt');
     try {
-        const { folderPath } = await req.json();
+        await fs.stat(srtPath);
+        return srtPath;
+    } catch {
+        return undefined;
+    }
+};
+
+export const GET = async (req: NextRequest) => {
+    try {
+        const { searchParams } = new URL(req.url);
+        const folderPath = searchParams.get('path');
 
         if (!folderPath) {
             return NextResponse.json({ error: 'Folder path is required' }, { status: 400 });
@@ -60,11 +71,14 @@ export const POST = async (req: NextRequest) => {
 
                 try {
                     const duration = await getVideoDuration(filePath);
+                    const subtitlePath = await checkSubtitleExists(filePath);
+
                     videoFiles.push({
                         duration: formatDuration(duration),
                         name: file,
                         path: filePath,
                         size: formatSize(stats.size),
+                        ...(subtitlePath && { subtitlePath }),
                     });
                 } catch (error) {
                     console.error(`Error getting metadata for ${file}:`, error);
