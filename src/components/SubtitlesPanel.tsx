@@ -168,6 +168,8 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                                     return (
                                         <TableRow
                                             key={sub.index}
+                                            role="button"
+                                            tabIndex={0}
                                             className={`cursor-pointer border-slate-700 hover:bg-slate-700/50 ${isFlagged ? styles.bg : ''}`}
                                             onClick={() => onSeekToTime(sub.startTime)}
                                         >

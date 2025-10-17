@@ -12,6 +12,16 @@ export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
             return;
         }
 
+        const invalid = ranges.some((r) => {
+            const [start, end] = [r.start, r.end].map(Number);
+            return !Number.isFinite(start) || !Number.isFinite(end) || Number(start) < 0 || end <= start;
+        });
+
+        if (invalid) {
+            toast.error('Please ensure each time range has start < end and non-negative values');
+            return;
+        }
+
         setProcessing(true);
         setProgress(0);
 

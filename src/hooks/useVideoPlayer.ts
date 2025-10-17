@@ -35,7 +35,9 @@ export const useVideoPlayer = () => {
     const skipTime = useCallback(
         (seconds: number) => {
             if (videoRef.current) {
-                const newTime = Math.max(0, Math.min(videoRef.current.currentTime + seconds, duration));
+                const total = Number.isFinite(videoRef.current.duration) ? videoRef.current.duration : duration;
+                const newTime = Math.max(0, Math.min(videoRef.current.currentTime + seconds, total));
+
                 videoRef.current.currentTime = newTime;
                 setCurrentTime(newTime);
             }

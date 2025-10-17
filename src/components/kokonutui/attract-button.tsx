@@ -81,22 +81,24 @@ export default function AttractButton({
             onTouchEnd={handleInteractionEnd}
             {...props}
         >
-            {particles.map((_, index) => (
+            {particles.map((p, index) => (
                 <motion.div
-                    key={index.toString()}
+                    key={p.id}
                     custom={index}
-                    initial={{ x: particles[index].x, y: particles[index].y }}
+                    initial={{ x: p.x, y: p.y }}
                     animate={particlesControl}
                     className={cn(
-                        'absolute h-1.5 w-1.5 rounded-full',
+                        'pointer-events-none absolute h-1.5 w-1.5 rounded-full',
                         'bg-violet-400 dark:bg-violet-300',
                         'transition-opacity duration-300',
                         isAttracting ? 'opacity-100' : 'opacity-40',
                     )}
+                    aria-hidden
                 />
             ))}
             <span className="relative flex w-full items-center justify-center gap-2">
                 <FolderInputIcon
+                    aria-hidden
                     className={cn('h-4 w-4 transition-transform duration-300', isAttracting && 'scale-110')}
                 />
                 {isAttracting ? hoverText : text}

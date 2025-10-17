@@ -5,3 +5,5 @@ export const FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB'];
 export const SRT_TIME_PATTERN = /(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/;
 
 export const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv'];
+
+export const VIDEO_EXTENSIONS_PATTERN = /\.(mp4|mov|avi|mkv|webm|flv|wmv)$/i;

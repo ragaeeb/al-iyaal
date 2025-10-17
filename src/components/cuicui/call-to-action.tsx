@@ -1,6 +1,7 @@
 import { ArrowLeftIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function CallToAction({
     children,
@@ -10,7 +11,10 @@ export default function CallToAction({
 }: { children: ReactNode; className?: string; pillText: string } & ComponentProps<'button'>) {
     return (
         <Button
-            className="group relative flex flex-row items-center gap-2 overflow-hidden rounded-full border border-neutral-400/15 bg-neutral-400/5 p-1 pr-3 text-sm shadow-2xs transition duration-100 hover:border-neutral-400/30 hover:bg-neutral-400/10 hover:shadow-2xs focus-visible:rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-600"
+            className={cn(
+                'group relative flex flex-row items-center gap-2 overflow-hidden rounded-full border border-neutral-400/15 bg-neutral-400/5 p-1 pr-3 text-sm shadow-2xs transition duration-100 hover:border-neutral-400/30 hover:bg-neutral-400/10 hover:shadow-2xs focus-visible:rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-600',
+                className,
+            )}
             {...props}
         >
             <ArrowLeftIcon className="size-5 text-neutral-500 transition-transform duration-100 group-hover:translate-x-1 dark:text-neutral-400" />

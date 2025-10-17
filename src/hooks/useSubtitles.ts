@@ -20,15 +20,18 @@ export const useSubtitles = (srtPath?: string) => {
                 setSummary('');
                 toast.success('Subtitles loaded automatically');
             } else {
-                console.error('Failed to load subtitles: HTTP', response.status);
+                const msg = `Failed to load subtitles (HTTP ${response.status})`;
+                console.error(msg);
+                toast.error(msg);
             }
         } catch (error) {
             console.error('Failed to load subtitles:', error);
+            toast.error('Failed to load subtitles');
         }
     }, []);
 
     const handleSubtitleDrop = useCallback((file: File) => {
-        if (file.name.endsWith('.srt')) {
+        if (file.name.toLowerCase().endsWith('.srt')) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const content = event.target?.result as string;
@@ -37,6 +40,9 @@ export const useSubtitles = (srtPath?: string) => {
                 setFlaggedSubtitles([]);
                 setSummary('');
                 toast.success('Subtitles loaded successfully');
+            };
+            reader.onerror = () => {
+                toast.error('Failed to read subtitle file');
             };
             reader.readAsText(file);
         } else {

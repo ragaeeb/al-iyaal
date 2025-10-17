@@ -32,6 +32,12 @@ const ScrambleHover = ({
     const [isScrambling, setIsScrambling] = useState(false);
     const [revealedIndices] = useState(new Set<number>());
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: We don't need to read it, just clear it
+    useEffect(() => {
+        revealedIndices.clear();
+        setDisplayText(text);
+    }, [text]);
+
     useEffect(() => {
         let interval: NodeJS.Timeout;
         let currentIteration = 0;
@@ -167,7 +173,7 @@ const ScrambleHover = ({
             className={cn('inline-block whitespace-pre-wrap', className)}
             {...props}
         >
-            <span className="sr-only">{displayText}</span>
+            <span className="sr-only">{text}</span>
             <span aria-hidden="true">
                 {displayText.split('').map((char, index) => (
                     <span

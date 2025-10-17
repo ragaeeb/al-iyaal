@@ -21,9 +21,16 @@ const SettingsPage = () => {
         const loadSettings = async () => {
             try {
                 const response = await fetch('/api/settings');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const data = await response.json();
+
                 setSettings(data);
             } catch (error) {
+                console.error(error);
                 toast.error('Failed to load settings');
             } finally {
                 setLoading(false);

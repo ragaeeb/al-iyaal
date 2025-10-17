@@ -17,15 +17,25 @@ const VideosContent = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const loadVideos = async () => {
             if (!folderPath) {
-                router.push('/');
+                router.replace('/');
                 return;
             }
 
             setLoading(true);
+
             try {
-                const response = await fetch(`/api/videos/list?path=${encodeURIComponent(folderPath)}`);
+                const response = await fetch(`/api/videos/list?path=${encodeURIComponent(folderPath)}`, {
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const data = await response.json();
                 setVideos(data.videos || []);
             } catch (error) {
@@ -36,6 +46,8 @@ const VideosContent = () => {
         };
 
         loadVideos();
+
+        return () => controller.abort?.();
     }, [folderPath, router]);
 
     const handleVideoSelect = (video: VideoFile) => {

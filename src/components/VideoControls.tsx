@@ -24,12 +24,10 @@ export const VideoControls = memo<VideoControlsProps>(
         const handleTimeInputChange = useCallback(
             (value: string) => {
                 setTimeInput(value);
-                const match = value.match(/^(\d{1,2}):(\d{2}):(\d{2})$|^(\d{1,2}):(\d{2})$/);
-                if (match) {
-                    const seconds = parseTimeToSeconds(value);
-                    if (seconds <= duration) {
-                        onSeek(seconds);
-                    }
+                const seconds = parseTimeToSeconds(value);
+                if (Number.isFinite(seconds)) {
+                    const clamped = Math.max(0, Math.min(seconds, duration));
+                    onSeek(clamped);
                 }
             },
             [duration, onSeek],
@@ -41,11 +39,16 @@ export const VideoControls = memo<VideoControlsProps>(
                     <div className="flex h-8 items-center gap-2 overflow-hidden rounded-lg border border-neutral-400/10 bg-neutral-400/10 p-1">
                         <MagneticBackgroundButton
                             onClick={() => onSkipTime(-5)}
+                            aria-label="Skip back 5 seconds"
                             className="h-6 flex-col gap-1 px-2 py-1"
                         >
                             <SkipBack className="size-4 text-neutral-400" />
                         </MagneticBackgroundButton>
-                        <MagneticBackgroundButton onClick={onTogglePlayPause} className="h-6 flex-col gap-1 px-2 py-1">
+                        <MagneticBackgroundButton
+                            aria-label={isPlaying ? 'Pause' : 'Play'}
+                            onClick={onTogglePlayPause}
+                            className="h-6 flex-col gap-1 px-2 py-1"
+                        >
                             {isPlaying ? (
                                 <Pause className="size-4 text-neutral-400" />
                             ) : (
@@ -54,13 +57,20 @@ export const VideoControls = memo<VideoControlsProps>(
                         </MagneticBackgroundButton>
                         <MagneticBackgroundButton
                             onClick={() => onSkipTime(5)}
+                            aria-label="Skip forward 5 seconds"
                             className="h-6 flex-col gap-1 px-2 py-1"
                         >
                             <SkipForward className="size-4 text-neutral-400" />
                         </MagneticBackgroundButton>
                     </div>
 
-                    <SimpleModernSlider value={currentTime} max={duration} onChange={onSeek} className="h-8" />
+                    <SimpleModernSlider
+                        aria-label="Seek"
+                        value={currentTime}
+                        max={duration}
+                        onChange={onSeek}
+                        className="h-8"
+                    />
 
                     <div className="flex h-8 flex-shrink-0 items-center gap-2">
                         <Input

@@ -164,7 +164,7 @@ bun start
 
 ## File Structure
 
-```
+```text
 al-iyaal/
 ├── src/
 │   ├── app/
@@ -265,7 +265,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-**Ragaeeb Haq**
+### Ragaeeb Haq
 
 - GitHub: [@ragaeeb](https://github.com/ragaeeb)
 

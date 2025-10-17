@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { PromptSettings } from '@/types';
+import { writeAtomicJson } from './io';
 
 const SETTINGS_FILE = path.join(os.tmpdir(), 'al-iyaal', 'settings.json');
 
@@ -30,7 +31,7 @@ const ensureSettingsFile = async () => {
         await fs.mkdir(path.dirname(SETTINGS_FILE), { recursive: true });
         await fs.access(SETTINGS_FILE);
     } catch {
-        await fs.writeFile(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+        await fs.writeFile(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2), { mode: 0o600 });
     }
 };
 
@@ -47,5 +48,5 @@ export const getSettings = async (): Promise<PromptSettings> => {
 
 export const saveSettings = async (settings: PromptSettings): Promise<void> => {
     await ensureSettingsFile();
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    await writeAtomicJson(SETTINGS_FILE, settings);
 };

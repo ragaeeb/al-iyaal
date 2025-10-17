@@ -77,6 +77,7 @@ const DropdownMenuItem = forwardRef<
         ref={ref}
         className={cn(
             'cursor-pointer truncate whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-white/90 hover:bg-blue-600 focus:outline-hidden focus:ring-0',
+            'focus:bg-blue-600',
             inset && 'pl-8',
             className,
         )}

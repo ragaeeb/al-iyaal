@@ -41,7 +41,7 @@ function Button({
 }: React.ComponentProps<'button'> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
     const Comp = asChild ? Slot : 'button';
 
-    return <Comp data-slot="button" className={cn(buttonVariants({ className, size, variant }))} {...props} />;
+    return <Comp data-slot="button" className={cn(buttonVariants({ size, variant }), className)} {...props} />;
 }
 
 export { Button, buttonVariants };

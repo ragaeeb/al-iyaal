@@ -41,6 +41,7 @@ const RangeList = ({
                         <button
                             type="button"
                             className="cursor-pointer p-0 text-slate-400 hover:text-red-400"
+                            aria-label="Remove time range"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRemoveRange(range);

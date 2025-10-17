@@ -1,13 +1,15 @@
 import type { SubtitleEntry } from '@/types';
 import { FILE_SIZE_UNITS, SRT_TIME_PATTERN } from './constants';
 
+const formatWithHour = (hours: number, minutes: number, seconds: number) => {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
 export const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
-    return h > 0
-        ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-        : `${m}:${s.toString().padStart(2, '0')}`;
+    return h > 0 ? formatWithHour(h, m, s) : `${m}:${s.toString().padStart(2, '0')}`;
 };
 
 export const formatSize = (bytes: number) => {
@@ -28,14 +30,14 @@ export const formatTime = (seconds: number, maxDuration?: number) => {
     const showHours = (maxDuration ?? seconds) >= 3600;
 
     if (showHours) {
-        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        return formatWithHour(h, m, s);
     }
 
     return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
 export const parseTimeToSeconds = (time: string) => {
-    const parts = time.split(':').map(Number);
+    const parts = time.trim().split(':').map(Number);
     let seconds = 0;
     let multiplier = 1;
 

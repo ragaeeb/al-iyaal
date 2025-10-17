@@ -17,14 +17,20 @@
 .cascadeLoader {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(5, 20px);
-    gap: 5px;
-    height: 20px;
+    grid-template-columns: repeat(var(--bars, 5), var(--bar-size, 20px));
+    gap: var(--bar-gap, 5px);
+    height: var(--bar-size, 20px);
 }
 
 .cascadeBar {
-    width: 20px;
-    height: 20px;
-    background: rgb(59, 130, 246); /* blue-500 */
+    width: var(--bar-size, 20px);
+    height: var(--bar-size, 20px);
+    background: var(--bar-color, rgb(59, 130, 246)); /* blue-500 */
     animation: cascade 1.5s ease infinite backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cascadeBar {
+        animation: none;
+    }
 }

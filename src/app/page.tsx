@@ -6,6 +6,7 @@ import GlowText from '@/components/cuicui/glow-text';
 import { MainMenusGradientCard } from '@/components/cuicui/gradient-card';
 import AttractButton from '@/components/kokonutui/attract-button';
 import { Input } from '@/components/ui/input';
+import { VIDEO_EXTENSIONS_PATTERN } from '@/lib/constants';
 
 const HomePage = () => {
     const router = useRouter();
@@ -16,7 +17,7 @@ const HomePage = () => {
             return;
         }
 
-        const isFile = inputPath.match(/\.(mp4|mov|avi|mkv|webm|flv|wmv)$/i);
+        const isFile = inputPath.match(VIDEO_EXTENSIONS_PATTERN);
 
         if (isFile) {
             router.push(`/editor?path=${encodeURIComponent(inputPath)}`);

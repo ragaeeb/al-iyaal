@@ -18,7 +18,6 @@ export const MainMenusGradientCard = ({
     circleSize?: number;
     children?: ReactNode;
     className?: string;
-    size?: 'sm' | 'md' | 'lg';
 }) => {
     const [mouse, parentRef] = useMouse();
 
@@ -41,6 +40,7 @@ export const MainMenusGradientCard = ({
                     left: `${mouse.elementX}px`,
                     maskImage: `radial-gradient(${circleSize / 2}px circle at center, white, transparent)`,
                     top: `${mouse.elementY}px`,
+                    WebkitMaskImage: `radial-gradient(${circleSize / 2}px circle at center, white, transparent)`,
                     width: `${circleSize}px`,
                 }}
             />

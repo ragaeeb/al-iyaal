@@ -47,6 +47,10 @@ export const POST = async (req: NextRequest) => {
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
                 };
 
+                const heartbeat = setInterval(() => {
+                    controller.enqueue(encoder.encode(': keep-alive\n\n')); // without heartbeats some proxies can drop idle SSE connections
+                }, 15000);
+
                 try {
                     const settings = await getSettings();
 
@@ -72,7 +76,7 @@ Additionally, provide a summary of the overall storyline based on the subtitles.
 Subtitles:
 ${subtitleText}
 
-Respond ONLY with a valid JSON object in this exact format, with no additional text or markdown:
+Respond ONLY with a valid JSON object in this exact format, with no additional text or markdown or code fences:
 {
   "flagged": [
     {
@@ -111,6 +115,7 @@ If no issues are found, respond with: {"flagged": [], "summary": "your summary h
                 } catch (error) {
                     send({ error: error instanceof Error ? error.message : 'Analysis failed' });
                 } finally {
+                    clearInterval(heartbeat);
                     controller.close();
                 }
             },

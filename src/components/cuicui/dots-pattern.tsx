@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
 
-type DotPatternProps = {
+type DotPatternProps = React.SVGProps<SVGSVGElement> & {
     width?: number;
     height?: number;
     x?: number;

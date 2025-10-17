@@ -18,6 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <main>
                     <DotsPattern
+                        aria-hidden
                         className={cn('[mask-image:radial-gradient(300px_circle_at_center,white,transparent)]')}
                     />
                     {children}

@@ -29,6 +29,8 @@ export const VideoPlayer = memo<VideoPlayerProps>(
                     ref={videoRef}
                     src={`/api/videos/stream?path=${encodeURIComponent(videoPath)}`}
                     onLoadedMetadata={onLoadedMetadata}
+                    playsInline
+                    preload="metadata"
                     onTimeUpdate={onTimeUpdate}
                     onPlay={onPlay}
                     onPause={onPause}
@@ -38,7 +40,7 @@ export const VideoPlayer = memo<VideoPlayerProps>(
                 </video>
                 {currentSubtitle && (
                     <div className="absolute right-0 bottom-8 left-0 flex justify-center px-4">
-                        <div className="max-w-[90%] rounded-lg bg-black/80 px-4 py-2 text-center font-medium text-white text-xl shadow-lg">
+                        <div className="max-w-[90%] whitespace-pre-wrap rounded-lg bg-black/80 px-4 py-2 text-center font-medium text-white text-xl leading-relaxed shadow-lg">
                             {currentSubtitle.text}
                         </div>
                     </div>
