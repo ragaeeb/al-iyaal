@@ -15,6 +15,12 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - uses: FedericoCarboni/setup-ffmpeg@v3
+              with:
+                ffmpeg-version: release
+
+            - run: ffmpeg -version && ffprobe -version
+
             - name: Set up Bun
               uses: oven-sh/setup-bun@v2
               with:
