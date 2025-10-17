@@ -2,14 +2,13 @@
 
 import { Clock, FileText, HardDrive, Video } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import ScrambleHover from '@/components/cuicui/scramble';
 import { CascadeLoader } from '@/components/loaders/CascadeLoader';
 import { Card } from '@/components/ui/card';
+import type { VideoFile } from '@/types';
 
-type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
-
-const VideosPage = () => {
+const VideosContent = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const folderPath = searchParams.get('path') || '';
@@ -121,6 +120,20 @@ const VideosPage = () => {
                 )}
             </div>
         </div>
+    );
+};
+
+const VideosPage = () => {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+                    <CascadeLoader />
+                </div>
+            }
+        >
+            <VideosContent />
+        </Suspense>
     );
 };
 

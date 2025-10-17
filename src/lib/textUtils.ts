@@ -1,11 +1,40 @@
-export const formatTime = (seconds: number): string => {
+import type { SubtitleEntry } from '@/types';
+import { FILE_SIZE_UNITS, SRT_TIME_PATTERN } from './constants';
+
+export const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return h > 0
+        ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        : `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export const parseTimeToSeconds = (time: string): number => {
+export const formatSize = (bytes: number) => {
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < FILE_SIZE_UNITS.length - 1) {
+        size /= 1024;
+        unitIndex++;
+    }
+    return `${size.toFixed(1)} ${FILE_SIZE_UNITS[unitIndex]}`;
+};
+
+export const formatTime = (seconds: number, maxDuration?: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+
+    const showHours = (maxDuration ?? seconds) >= 3600;
+
+    if (showHours) {
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+export const parseTimeToSeconds = (time: string) => {
     const parts = time.split(':').map(Number);
     let seconds = 0;
     let multiplier = 1;
@@ -18,7 +47,7 @@ export const parseTimeToSeconds = (time: string): number => {
     return seconds;
 };
 
-export const parseSrtTime = (timeString: string): number => {
+export const parseSrtTime = (timeString: string) => {
     const parts = timeString.split(':');
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
@@ -29,11 +58,9 @@ export const parseSrtTime = (timeString: string): number => {
     return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
 };
 
-export const parseSrt = (
-    content: string,
-): Array<{ index: number; startTime: number; endTime: number; text: string }> => {
+export const parseSrt = (content: string) => {
     const blocks = content.trim().split('\n\n');
-    const subtitles: Array<{ index: number; startTime: number; endTime: number; text: string }> = [];
+    const subtitles: SubtitleEntry[] = [];
 
     for (const block of blocks) {
         const lines = block.split('\n');
@@ -42,7 +69,7 @@ export const parseSrt = (
             const timeLine = lines[1];
             const text = lines.slice(2).join('\n');
 
-            const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+            const timeMatch = timeLine.match(SRT_TIME_PATTERN);
             if (timeMatch) {
                 subtitles.push({
                     endTime: parseSrtTime(timeMatch[2]),

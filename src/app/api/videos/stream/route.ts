@@ -1,4 +1,4 @@
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -11,7 +11,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     try {
-        const fileStats = statSync(videoPath);
+        const fileStats = await stat(videoPath);
         const fileSize = fileStats.size;
         const range = req.headers.get('range');
 
@@ -40,6 +40,7 @@ export const GET = async (req: NextRequest) => {
             });
         }
     } catch (error) {
+        console.error(error);
         return new NextResponse('Video not found', { status: 404 });
     }
 };

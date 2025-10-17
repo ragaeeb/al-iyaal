@@ -1,7 +1,7 @@
 import { Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { formatTime, parseTimeToSeconds } from '@/lib/srtParsing';
+import { formatTime, parseTimeToSeconds } from '@/lib/textUtils';
 import { MagneticBackgroundButton } from './cuicui/magnetic-background-button';
 import { SimpleModernSlider } from './cuicui/simple-modern-slider';
 
@@ -18,8 +18,8 @@ export const VideoControls = memo<VideoControlsProps>(
     ({ isPlaying, currentTime, duration, onTogglePlayPause, onSkipTime, onSeek }) => {
         const [timeInput, setTimeInput] = useState('');
 
-        const currentTimeFormatted = formatTime(currentTime);
-        const durationFormatted = formatTime(duration);
+        const currentTimeFormatted = formatTime(currentTime, duration);
+        const durationFormatted = formatTime(duration, duration);
 
         const handleTimeInputChange = useCallback(
             (value: string) => {
@@ -68,7 +68,7 @@ export const VideoControls = memo<VideoControlsProps>(
                             onChange={(e) => handleTimeInputChange(e.target.value)}
                             onFocus={() => setTimeInput(currentTimeFormatted)}
                             onBlur={() => setTimeInput('')}
-                            className="h-full w-24 border-slate-700 bg-slate-800 px-2 text-center text-slate-400 text-xs tabular-nums"
+                            className="h-full w-20 border-slate-700 bg-slate-800 px-2 text-center text-slate-400 text-xs tabular-nums"
                         />
                         <span className="text-slate-500 text-xs">/</span>
                         <span className="text-slate-400 text-xs tabular-nums">{durationFormatted}</span>

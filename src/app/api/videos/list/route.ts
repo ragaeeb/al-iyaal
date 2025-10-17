@@ -1,52 +1,31 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import ffmpeg from 'fluent-ffmpeg';
 import { type NextRequest, NextResponse } from 'next/server';
+import { VIDEO_EXTENSIONS } from '@/lib/constants';
+import { type ProbeResult, probeMany } from '@/lib/probePool';
+import { formatDuration, formatSize } from '@/lib/textUtils';
+import type { VideoFile } from '@/types';
 
-type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
+const mapProbedResultsToVideoFiles = (probed: ProbeResult[], subtitleBasenames: Set<string>): VideoFile[] => {
+    return probed.map((p) => {
+        const name = path.basename(p.path);
+        const nameWithoutExt = path.basename(p.path, path.extname(p.path));
 
-const getVideoDuration = (filePath: string): Promise<number> => {
-    return new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(metadata.format.duration || 0);
-            }
-        });
+        const subtitlePath = subtitleBasenames.has(nameWithoutExt) ? p.path.replace(/\.[^.]+$/, '.srt') : undefined;
+
+        if (p.ok) {
+            return {
+                duration: formatDuration(p.durationSec),
+                name,
+                path: p.path,
+                size: formatSize(p.sizeByte),
+                ...(subtitlePath && { subtitlePath }),
+            };
+        } else {
+            console.error(`Probe failed for ${name}: ${p.error}`);
+            return { duration: '—', name, path: p.path, size: '—', ...(subtitlePath && { subtitlePath }) };
+        }
     });
-};
-
-const formatDuration = (seconds: number): string => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    return h > 0
-        ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-        : `${m}:${s.toString().padStart(2, '0')}`;
-};
-
-const formatSize = (bytes: number): string => {
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024;
-        unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-};
-
-const checkSubtitleExists = async (videoPath: string): Promise<string | undefined> => {
-    const srtPath = videoPath.replace(/\.[^.]+$/, '.srt');
-    try {
-        await fs.stat(srtPath);
-        return srtPath;
-    } catch {
-        return undefined;
-    }
 };
 
 export const GET = async (req: NextRequest) => {
@@ -59,32 +38,21 @@ export const GET = async (req: NextRequest) => {
         }
 
         const files = await fs.readdir(folderPath);
-        const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv'];
 
-        const videoFiles: VideoFile[] = [];
+        const srtBaseNames = new Set(
+            files.filter((f) => path.extname(f).toLowerCase() === '.srt').map((f) => path.basename(f, '.srt')),
+        );
 
-        for (const file of files) {
-            const ext = path.extname(file).toLowerCase();
-            if (videoExtensions.includes(ext)) {
-                const filePath = path.join(folderPath, file);
-                const stats = await fs.stat(filePath);
+        // Build absolute paths for candidate videos
+        const videoPaths = files
+            .filter((f) => VIDEO_EXTENSIONS.includes(path.extname(f).toLowerCase()))
+            .map((f) => path.join(folderPath, f));
 
-                try {
-                    const duration = await getVideoDuration(filePath);
-                    const subtitlePath = await checkSubtitleExists(filePath);
+        // Probe durations concurrently (bounded)
+        const probed = await probeMany(videoPaths);
 
-                    videoFiles.push({
-                        duration: formatDuration(duration),
-                        name: file,
-                        path: filePath,
-                        size: formatSize(stats.size),
-                        ...(subtitlePath && { subtitlePath }),
-                    });
-                } catch (error) {
-                    console.error(`Error getting metadata for ${file}:`, error);
-                }
-            }
-        }
+        // Build response objects (size comes from probe result now!)
+        const videoFiles = mapProbedResultsToVideoFiles(probed, srtBaseNames);
 
         return NextResponse.json({ videos: videoFiles });
     } catch (error) {

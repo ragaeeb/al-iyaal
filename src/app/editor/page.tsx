@@ -1,9 +1,11 @@
 'use client';
 
+import { Settings } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import CallToAction from '@/components/cuicui/call-to-action';
 import { ModernAnimatedButton } from '@/components/cuicui/modern-animated-button';
+import { CascadeLoader } from '@/components/loaders/CascadeLoader';
 import { ProcessingProgress } from '@/components/ProcessingProgress';
 import { SubtitlesPanel } from '@/components/SubtitlesPanel';
 import { TimeRanges } from '@/components/TimeRanges';
@@ -15,10 +17,10 @@ import { useSubtitles } from '@/hooks/useSubtitles';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { useVideoRemount } from '@/hooks/useVideoRemount';
-import { parseTimeToSeconds } from '@/lib/srtParsing';
+import { parseTimeToSeconds } from '@/lib/textUtils';
 import type { TimeRange } from '@/types';
 
-const EditorPage = () => {
+const EditorContent = () => {
     const searchParams = useSearchParams();
     const [ranges, setRanges] = useState<TimeRange[]>([]);
     const videoPath = searchParams.get('path') || '';
@@ -38,7 +40,7 @@ const EditorPage = () => {
         seekTo,
     } = useVideoPlayer();
 
-    const { subtitles, flaggedSubtitles, analyzing, handleSubtitleDrop, handleAnalyze, clearSubtitles } =
+    const { subtitles, flaggedSubtitles, analyzing, summary, handleSubtitleDrop, handleAnalyze, clearSubtitles } =
         useSubtitles(srtPath);
 
     const { processing, progress, handleProcess } = useVideoProcessing(videoPath, ranges);
@@ -73,22 +75,33 @@ const EditorPage = () => {
                         Back to
                     </CallToAction>
 
-                    {!processing && (
+                    <div className="flex items-center gap-3">
                         <Button
-                            onClick={handleProcess}
-                            disabled={ranges.length === 0}
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            onClick={() => router.push('/settings')}
+                            variant="outline"
+                            size="sm"
+                            className="border-slate-700 bg-slate-800 hover:bg-slate-700"
                         >
-                            Process Video
+                            <Settings className="mr-2 h-4 w-4" />
+                            Settings
                         </Button>
-                    )}
-                    {processing && (
-                        <ModernAnimatedButton>
-                            <span>Processing</span>
-                            <span className="h-5/6 w-px bg-neutral-700/50" />
-                            <span className="text-neutral-500">Video</span>
-                        </ModernAnimatedButton>
-                    )}
+                        {!processing && (
+                            <Button
+                                onClick={handleProcess}
+                                disabled={ranges.length === 0}
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            >
+                                Process Video
+                            </Button>
+                        )}
+                        {processing && (
+                            <ModernAnimatedButton>
+                                <span>Processing</span>
+                                <span className="h-5/6 w-px bg-neutral-700/50" />
+                                <span className="text-neutral-500">Video</span>
+                            </ModernAnimatedButton>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -123,6 +136,7 @@ const EditorPage = () => {
                             ranges={ranges}
                             onAddRange={addRange}
                             currentTime={currentTime}
+                            duration={duration}
                             onRemoveRange={removeRange}
                             onSeekToRange={handleSeekToRange}
                         />
@@ -131,6 +145,8 @@ const EditorPage = () => {
                             subtitles={subtitles}
                             flaggedSubtitles={flaggedSubtitles}
                             analyzing={analyzing}
+                            summary={summary}
+                            duration={duration}
                             onDrop={handleSubtitleDrop}
                             onAnalyze={handleAnalyze}
                             onClear={clearSubtitles}
@@ -140,6 +156,20 @@ const EditorPage = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+const EditorPage = () => {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+                    <CascadeLoader />
+                </div>
+            }
+        >
+            <EditorContent />
+        </Suspense>
     );
 };
 

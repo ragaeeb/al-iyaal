@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 import { GoogleGenAI } from '@google/genai';
 
-enum GeminiModel {
+export enum GeminiModel {
     FlashLiteV2_5 = 'gemini-2.5-flash-lite',
     ProV2_5 = 'gemini-2.5-pro',
 }
@@ -19,16 +19,13 @@ export const generateWithGemini = async (
     prompt: string,
     apiKey: string,
     validate: (responseText: string) => boolean,
+    model = process.env.GEMINI_MODEL || GeminiModel.FlashLiteV2_5,
     { maxRetries = 3, timeout = 1000 * 60 * 10 } = {},
 ) => {
     const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout } });
     const redactedKey = redactText(apiKey);
     const serializedSize = new TextEncoder().encode(prompt).length;
-    const content = {
-        config: { temperature: 0.1 },
-        contents: prompt,
-        model: process.env.GEMINI_MODEL || GeminiModel.FlashLiteV2_5,
-    };
+    const content = { config: { temperature: 0.1 }, contents: prompt, model };
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {

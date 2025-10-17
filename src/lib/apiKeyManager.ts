@@ -11,7 +11,7 @@ export class ApiKeyManager {
         }
 
         if (keys.length === 0) {
-            throw new Error('No API keys provided');
+            //throw new Error('No API keys provided');
         }
 
         this.keys = keys;

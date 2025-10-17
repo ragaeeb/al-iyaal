@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { parseSrt } from '@/lib/srtParsing';
+import { parseSrt } from '@/lib/textUtils';
 import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
 
 export const useSubtitles = (srtPath?: string) => {
     const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
     const [flaggedSubtitles, setFlaggedSubtitles] = useState<FlaggedSubtitle[]>([]);
+    const [summary, setSummary] = useState<string>('');
     const [analyzing, setAnalyzing] = useState(false);
 
     const loadSubtitlesFromPath = useCallback(async (filePath: string) => {
@@ -16,6 +17,7 @@ export const useSubtitles = (srtPath?: string) => {
                 const parsedSubtitles = parseSrt(content);
                 setSubtitles(parsedSubtitles);
                 setFlaggedSubtitles([]);
+                setSummary('');
                 toast.success('Subtitles loaded automatically');
             } else {
                 console.error('Failed to load subtitles: HTTP', response.status);
@@ -33,6 +35,7 @@ export const useSubtitles = (srtPath?: string) => {
                 const parsedSubtitles = parseSrt(content);
                 setSubtitles(parsedSubtitles);
                 setFlaggedSubtitles([]);
+                setSummary('');
                 toast.success('Subtitles loaded successfully');
             };
             reader.readAsText(file);
@@ -87,6 +90,7 @@ export const useSubtitles = (srtPath?: string) => {
                                 toast.info('Retrying analysis...');
                             } else if (data.complete) {
                                 setFlaggedSubtitles(data.flagged);
+                                setSummary(data.summary || '');
                                 setAnalyzing(false);
                                 const count = data.flagged.length;
                                 if (count === 0) {
@@ -111,14 +115,14 @@ export const useSubtitles = (srtPath?: string) => {
     const clearSubtitles = useCallback(() => {
         setSubtitles([]);
         setFlaggedSubtitles([]);
+        setSummary('');
     }, []);
 
-    // Load subtitles from query param if provided
     useEffect(() => {
         if (srtPath) {
             loadSubtitlesFromPath(srtPath);
         }
     }, [srtPath, loadSubtitlesFromPath]);
 
-    return { analyzing, clearSubtitles, flaggedSubtitles, handleAnalyze, handleSubtitleDrop, subtitles };
+    return { analyzing, clearSubtitles, flaggedSubtitles, handleAnalyze, handleSubtitleDrop, subtitles, summary };
 };

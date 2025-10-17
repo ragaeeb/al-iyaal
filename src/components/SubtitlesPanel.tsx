@@ -1,10 +1,10 @@
-import { Sparkles, Upload } from 'lucide-react';
+import { Sparkles, SubtitlesIcon } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatTime } from '@/lib/srtParsing';
+import { formatTime } from '@/lib/textUtils';
 import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './cuicui/mac-os-dropdown';
 
@@ -12,14 +12,27 @@ type SubtitlesPanelProps = {
     subtitles: SubtitleEntry[];
     flaggedSubtitles: FlaggedSubtitle[];
     analyzing: boolean;
+    summary: string;
+    duration: number;
     onDrop: (file: File) => void;
     onAnalyze: (strategy: AnalysisStrategy) => void;
     onClear: () => void;
     onSeekToTime: (time: number) => void;
 };
 
+const getPriorityStyles = (priority: 'high' | 'medium' | 'low') => {
+    switch (priority) {
+        case 'high':
+            return { badge: 'text-red-400/80', bg: 'bg-red-500/10', text: 'text-red-200' };
+        case 'medium':
+            return { badge: 'text-orange-400/80', bg: 'bg-orange-500/10', text: 'text-orange-200' };
+        case 'low':
+            return { badge: 'text-yellow-400/80', bg: 'bg-yellow-500/10', text: 'text-yellow-200' };
+    }
+};
+
 export const SubtitlesPanel = memo<SubtitlesPanelProps>(
-    ({ subtitles, flaggedSubtitles, analyzing, onDrop, onAnalyze, onClear, onSeekToTime }) => {
+    ({ subtitles, flaggedSubtitles, analyzing, summary, duration, onDrop, onAnalyze, onClear, onSeekToTime }) => {
         const [showOnlyConcerning, setShowOnlyConcerning] = useState(false);
 
         const displayedSubtitles = useMemo(() => {
@@ -33,7 +46,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
         const concerningCount = flaggedSubtitles.length;
 
         const getFlaggedData = useCallback(
-            (startTime: number) => flaggedSubtitles.find((f) => f.startTime === startTime),
+            (startTime: number) => flaggedSubtitles.find((f) => Math.abs(f.startTime - startTime) < 0.1),
             [flaggedSubtitles],
         );
 
@@ -42,7 +55,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                 <Card className="border-slate-800 bg-slate-900/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="flex items-center gap-2 font-semibold text-lg text-white">
-                            <Upload className="h-5 w-5 text-purple-400" />
+                            <SubtitlesIcon className="h-5 w-5 text-purple-400" />
                             Subtitles
                         </h2>
                     </div>
@@ -62,7 +75,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-slate-700 border-dashed bg-slate-800/50 transition-colors hover:border-purple-500 hover:bg-slate-800"
                     >
                         <div className="text-center">
-                            <Upload className="mx-auto mb-2 h-8 w-8 text-slate-500" />
+                            <SubtitlesIcon className="mx-auto mb-2 h-8 w-8 text-slate-500" />
                             <p className="text-slate-400 text-sm">Drop .srt file here</p>
                         </div>
                     </button>
@@ -74,7 +87,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
             <Card className="border-slate-800 bg-slate-900/50 p-4">
                 <div className="mb-3 flex items-center justify-between">
                     <h2 className="flex items-center gap-2 font-semibold text-lg text-white">
-                        <Upload className="h-5 w-5 text-purple-400" />
+                        <SubtitlesIcon className="h-5 w-5 text-purple-400" />
                         Subtitles
                     </h2>
 
@@ -95,6 +108,13 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                {summary && (
+                    <div className="mb-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+                        <p className="font-medium text-blue-400 text-sm">Summary</p>
+                        <p className="mt-1 text-slate-300 text-sm">{summary}</p>
+                    </div>
+                )}
 
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -133,7 +153,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-slate-700 hover:bg-slate-800/50">
-                                    <TableHead className="w-[120px] text-slate-400">Time</TableHead>
+                                    <TableHead className="w-[100px] text-slate-400">Time</TableHead>
                                     <TableHead className="text-slate-400">Text</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -141,25 +161,26 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                                 {displayedSubtitles.map((sub) => {
                                     const flaggedData = getFlaggedData(sub.startTime);
                                     const isFlagged = !!flaggedData;
+                                    const styles = flaggedData
+                                        ? getPriorityStyles(flaggedData.priority)
+                                        : { badge: '', bg: '', text: 'text-slate-300' };
 
                                     return (
                                         <TableRow
                                             key={sub.index}
-                                            className={`cursor-pointer border-slate-700 hover:bg-slate-700/50 ${
-                                                isFlagged ? 'bg-amber-500/10' : ''
-                                            }`}
+                                            className={`cursor-pointer border-slate-700 hover:bg-slate-700/50 ${isFlagged ? styles.bg : ''}`}
                                             onClick={() => onSeekToTime(sub.startTime)}
                                         >
                                             <TableCell className="font-mono text-purple-400 text-xs">
-                                                {formatTime(sub.startTime)}
+                                                {formatTime(sub.startTime, duration)}
                                             </TableCell>
                                             <TableCell className="text-sm">
                                                 <div className="space-y-1">
-                                                    <p className={isFlagged ? 'text-amber-200' : 'text-slate-300'}>
-                                                        {sub.text}
-                                                    </p>
+                                                    <p className={styles.text}>{sub.text}</p>
                                                     {isFlagged && flaggedData && (
-                                                        <p className="text-amber-400/80 text-xs">
+                                                        <p
+                                                            className={`whitespace-normal break-words ${styles.badge} text-xs`}
+                                                        >
                                                             ⚠ {flaggedData.reason}
                                                         </p>
                                                     )}

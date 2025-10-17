@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { generateWithGemini } from '@/lib/ai/gemini';
+import { GeminiModel, generateWithGemini } from '@/lib/ai/gemini';
 import { ApiKeyManager } from '@/lib/apiKeyManager';
+import { getSettings } from '@/lib/settingsManager';
+import type { AnalysisResult, AnalysisStrategy, SubtitleEntry } from '@/types';
 
-type SubtitleEntry = { startTime: number; endTime: number; text: string };
+type MinimalSubtitle = { startTime: number; text: string };
 
-type FlaggedSubtitle = { startTime: number; endTime: number; text: string; reason: string };
-
-const keyManager = new ApiKeyManager(process.env.GOOGLE_API_KEY!);
+const keyManager = new ApiKeyManager(process.env.GOOGLE_API_KEY || []);
 
 const sanitizeResponse = (text: string): string => {
     let cleaned = text.trim();
@@ -21,9 +21,19 @@ const sanitizeResponse = (text: string): string => {
     return cleaned.trim();
 };
 
+const validateResponse = (responseText: string) => {
+    try {
+        const sanitized = sanitizeResponse(responseText);
+        const parsed = JSON.parse(sanitized);
+        return parsed && Array.isArray(parsed.flagged) && typeof parsed.summary === 'string';
+    } catch {
+        return false;
+    }
+};
+
 export const POST = async (req: NextRequest) => {
     try {
-        const { subtitles }: { subtitles: SubtitleEntry[] } = await req.json();
+        const { subtitles, strategy }: { subtitles: SubtitleEntry[]; strategy: AnalysisStrategy } = await req.json();
 
         if (!subtitles || subtitles.length === 0) {
             return NextResponse.json({ error: 'No subtitles provided' }, { status: 400 });
@@ -38,50 +48,66 @@ export const POST = async (req: NextRequest) => {
                 };
 
                 try {
-                    const subtitleText = subtitles
-                        .map((sub) => `[${sub.startTime.toFixed(2)}s - ${sub.endTime.toFixed(2)}s]: ${sub.text}`)
+                    const settings = await getSettings();
+
+                    const minimalSubtitles: MinimalSubtitle[] = subtitles.map((sub) => ({
+                        startTime: sub.startTime,
+                        text: sub.text,
+                    }));
+
+                    const subtitleText = minimalSubtitles
+                        .map((sub) => `[${sub.startTime.toFixed(2)}s]: ${sub.text}`)
                         .join('\n');
 
                     const prompt = `You are analyzing subtitle content for a children's video to identify inappropriate material. Analyze the following subtitles and flag any content that contains:
 
-1. Adult relationships (kissing, romantic/sexual content, dating)
-2. Bad morals or unethical behavior
-3. Content against Islamic values and aqeedah (belief system)
-4. Magic, sorcery, or supernatural practices
-5. Music references or musical performances
-6. Violence or frightening content
-7. Inappropriate language or themes
+${settings.contentCriteria}
 
-For each problematic subtitle, identify the exact timestamp and provide a brief reason for flagging it.
+${settings.priorityGuidelines}
+
+For each problematic subtitle, identify the exact timestamp, assign a priority level, and provide a brief reason for flagging it.
+
+Additionally, provide a summary of the overall storyline based on the subtitles.
 
 Subtitles:
 ${subtitleText}
 
-Respond ONLY with a valid JSON array in this exact format, with no additional text or markdown:
-[
-  {
-    "startTime": 12.5,
-    "endTime": 15.3,
-    "text": "subtitle text here",
-    "reason": "brief explanation"
-  }
-]
+Respond ONLY with a valid JSON object in this exact format, with no additional text or markdown:
+{
+  "flagged": [
+    {
+      "startTime": 12.5,
+      "reason": "brief explanation",
+      "priority": "high"
+    }
+  ],
+  "summary": "Brief storyline summary based on all subtitles"
+}
 
-If no issues are found, respond with an empty array: []`;
+If no issues are found, respond with: {"flagged": [], "summary": "your summary here"}`;
 
                     send({ status: 'analyzing' });
-                    const text = await generateWithGemini(prompt, keyManager.getNext(), (responseText) => {
-                        try {
-                            const sanitized = sanitizeResponse(responseText);
-                            JSON.parse(sanitized);
-                            return true;
-                        } catch {
-                            return false;
-                        }
+                    const text = await generateWithGemini(
+                        prompt,
+                        keyManager.getNext(),
+                        validateResponse,
+                        strategy === 'deep' ? GeminiModel.ProV2_5 : GeminiModel.FlashLiteV2_5,
+                    );
+
+                    const result: AnalysisResult = JSON.parse(sanitizeResponse(text!));
+
+                    const flaggedWithFullData = result.flagged.map((item) => {
+                        const originalSub = subtitles.find((s) => Math.abs(s.startTime - item.startTime) < 0.1);
+                        return {
+                            endTime: originalSub?.endTime || item.startTime + 1,
+                            priority: item.priority,
+                            reason: item.reason,
+                            startTime: item.startTime,
+                            text: originalSub?.text || '',
+                        };
                     });
 
-                    const flagged: FlaggedSubtitle[] = JSON.parse(sanitizeResponse(text!));
-                    send({ complete: true, flagged });
+                    send({ complete: true, flagged: flaggedWithFullData, summary: result.summary });
                 } catch (error) {
                     send({ error: error instanceof Error ? error.message : 'Analysis failed' });
                 } finally {
