@@ -13,17 +13,14 @@ const HomePage = () => {
     const [inputPath, setInputPath] = useState('');
 
     const handleList = () => {
-        if (!inputPath.trim()) {
+        const path = inputPath.trim();
+        if (!path) {
             return;
         }
 
-        const isFile = inputPath.match(VIDEO_EXTENSIONS_PATTERN);
-
-        if (isFile) {
-            router.push(`/editor?path=${encodeURIComponent(inputPath)}`);
-        } else {
-            router.push(`/videos?path=${encodeURIComponent(inputPath)}`);
-        }
+        const isFile = VIDEO_EXTENSIONS_PATTERN.test(path);
+        const encoded = encodeURIComponent(path);
+        router.push(isFile ? `/editor?path=${encoded}` : `/videos?path=${encoded}`);
     };
 
     return (

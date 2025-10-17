@@ -59,8 +59,8 @@ export default function AttractButton({
         setIsAttracting(false);
         await particlesControl.start((i) => ({
             transition: { damping: 15, stiffness: 100, type: 'spring' },
-            x: particles[i].x,
-            y: particles[i].y,
+            x: particles[i].x ?? 0,
+            y: particles[i].y ?? 0,
         }));
     }, [particlesControl, particles]);
 

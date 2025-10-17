@@ -93,7 +93,7 @@ const DropdownMenuCheckboxItem = forwardRef<
     <DropdownMenuPrimitive.CheckboxItem
         ref={ref}
         className={cn(
-            'cursor-pointer truncate whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-white/90 hover:bg-blue-600',
+            'cursor-pointer truncate whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-white/90 hover:bg-blue-600 focus:bg-blue-600 focus:outline-hidden focus:ring-0',
             className,
         )}
         checked={checked}
@@ -116,7 +116,7 @@ const DropdownMenuRadioItem = forwardRef<
     <DropdownMenuPrimitive.RadioItem
         ref={ref}
         className={cn(
-            'cursor-pointer truncate whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-white/90 hover:bg-blue-600',
+            'cursor-pointer truncate whitespace-nowrap rounded-[4px] px-1.5 py-0.5 text-white/90 hover:bg-blue-600 focus:bg-blue-600 focus:outline-hidden focus:ring-0',
             className,
         )}
         {...props}

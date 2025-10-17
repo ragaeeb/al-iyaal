@@ -1,9 +1,9 @@
 'use client';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-interface ScrambleHoverProps {
+type ScrambleHoverProps = React.ComponentProps<typeof motion.span> & {
     text: string;
     scrambleSpeed?: number;
     maxIterations?: number;
@@ -11,9 +11,8 @@ interface ScrambleHoverProps {
     revealDirection?: 'start' | 'end' | 'center';
     useOriginalCharsOnly?: boolean;
     characters?: string;
-    className?: string;
     scrambledClassName?: string;
-}
+};
 
 const ScrambleHover = ({
     text,
@@ -30,11 +29,10 @@ const ScrambleHover = ({
     const [displayText, setDisplayText] = useState(text);
     const [isHovering, setIsHovering] = useState(false);
     const [isScrambling, setIsScrambling] = useState(false);
-    const [revealedIndices] = useState(new Set<number>());
+    const revealedIndices = useRef(new Set<number>());
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: We don't need to read it, just clear it
     useEffect(() => {
-        revealedIndices.clear();
+        revealedIndices.current.clear();
         setDisplayText(text);
     }, [text]);
 
@@ -51,26 +49,26 @@ const ScrambleHover = ({
                 case 'center':
                     return getNextIndexFromCenter();
                 default:
-                    return revealedIndices.size;
+                    return revealedIndices.current.size;
             }
         };
 
-        const getNextIndexFromStart = () => revealedIndices.size;
+        const getNextIndexFromStart = () => revealedIndices.current.size;
 
-        const getNextIndexFromEnd = () => text.length - 1 - revealedIndices.size;
+        const getNextIndexFromEnd = () => text.length - 1 - revealedIndices.current.size;
 
         const getNextIndexFromCenter = () => {
             const textLength = text.length;
             const middle = Math.floor(textLength / 2);
-            const offset = Math.floor(revealedIndices.size / 2);
-            const nextIndex = revealedIndices.size % 2 === 0 ? middle + offset : middle - offset - 1;
+            const offset = Math.floor(revealedIndices.current.size / 2);
+            const nextIndex = revealedIndices.current.size % 2 === 0 ? middle + offset : middle - offset - 1;
 
-            if (nextIndex >= 0 && nextIndex < textLength && !revealedIndices.has(nextIndex)) {
+            if (nextIndex >= 0 && nextIndex < textLength && !revealedIndices.current.has(nextIndex)) {
                 return nextIndex;
             }
 
             for (let i = 0; i < textLength; i++) {
-                if (!revealedIndices.has(i)) {
+                if (!revealedIndices.current.has(i)) {
                     return i;
                 }
             }
@@ -81,7 +79,12 @@ const ScrambleHover = ({
             if (useOriginalCharsOnly) {
                 const positions = text
                     .split('')
-                    .map((char, i) => ({ char, index: i, isRevealed: revealedIndices.has(i), isSpace: char === ' ' }));
+                    .map((char, i) => ({
+                        char,
+                        index: i,
+                        isRevealed: revealedIndices.current.has(i),
+                        isSpace: char === ' ',
+                    }));
 
                 const nonSpaceChars = positions.filter((p) => !(p.isSpace || p.isRevealed)).map((p) => p.char);
 
@@ -110,7 +113,7 @@ const ScrambleHover = ({
                     if (char === ' ') {
                         return ' ';
                     }
-                    if (revealedIndices.has(i)) {
+                    if (revealedIndices.current.has(i)) {
                         return text[i];
                     }
                     return availableChars[Math.floor(Math.random() * availableChars.length)];
@@ -126,9 +129,9 @@ const ScrambleHover = ({
             setIsScrambling(true);
             interval = setInterval(() => {
                 if (sequential) {
-                    if (revealedIndices.size < text.length) {
+                    if (revealedIndices.current.size < text.length) {
                         const nextIndex = getNextIndex();
-                        revealedIndices.add(nextIndex);
+                        revealedIndices.current.add(nextIndex);
                         setDisplayText(shuffleText(text));
                     } else {
                         clearInterval(interval);
@@ -146,7 +149,7 @@ const ScrambleHover = ({
             }, scrambleSpeed);
         } else {
             setDisplayText(text);
-            revealedIndices.clear();
+            revealedIndices.current.clear();
         }
 
         return () => {
@@ -154,17 +157,7 @@ const ScrambleHover = ({
                 clearInterval(interval);
             }
         };
-    }, [
-        isHovering,
-        revealedIndices,
-        text,
-        characters,
-        scrambleSpeed,
-        useOriginalCharsOnly,
-        sequential,
-        revealDirection,
-        maxIterations,
-    ]);
+    }, [isHovering, text, characters, scrambleSpeed, useOriginalCharsOnly, sequential, revealDirection, maxIterations]);
 
     return (
         <motion.span
@@ -179,7 +172,9 @@ const ScrambleHover = ({
                     <span
                         key={`${index}-${char}`}
                         className={cn(
-                            revealedIndices.has(index) || !isScrambling || !isHovering ? className : scrambledClassName,
+                            revealedIndices.current.has(index) || !isScrambling || !isHovering
+                                ? className
+                                : scrambledClassName,
                         )}
                     >
                         {char}

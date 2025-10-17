@@ -37,11 +37,16 @@ const VideosContent = () => {
                 }
 
                 const data = await response.json();
-                setVideos(data.videos || []);
+
+                if (!controller.signal.aborted) {
+                    setVideos(data.videos || []);
+                }
             } catch (error) {
                 console.error('Failed to load videos:', error);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
 

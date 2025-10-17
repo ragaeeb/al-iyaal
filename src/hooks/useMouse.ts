@@ -25,21 +25,28 @@ export function useMouse(
 
     useLayoutEffect(() => {
         let rafId: number | null = null;
+        let latestEvent: MouseEvent | null = null;
 
         const handleMouseMove = (event: MouseEvent) => {
+            latestEvent = event;
+
             if (rafId !== null) {
                 return;
             }
 
             rafId = requestAnimationFrame(() => {
-                const newState: Partial<MouseState> = { x: event.pageX, y: event.pageY };
+                if (!latestEvent) {
+                    return;
+                }
+
+                const newState: Partial<MouseState> = { x: latestEvent.pageX, y: latestEvent.pageY };
 
                 if (containerRef?.current instanceof Element) {
                     const { left, top } = containerRef.current.getBoundingClientRect();
                     const containerPositionX = left + window.scrollX;
                     const containerPositionY = top + window.scrollY;
-                    const containerX = event.pageX - containerPositionX;
-                    const containerY = event.pageY - containerPositionY;
+                    const containerX = latestEvent.pageX - containerPositionX;
+                    const containerY = latestEvent.pageY - containerPositionY;
 
                     newState.elementX = containerX;
                     newState.elementY = containerY;
@@ -49,8 +56,8 @@ export function useMouse(
                     const { left, top } = ref.current.getBoundingClientRect();
                     const elementPositionX = left + window.scrollX;
                     const elementPositionY = top + window.scrollY;
-                    const elementX = event.pageX - elementPositionX;
-                    const elementY = event.pageY - elementPositionY;
+                    const elementX = latestEvent.pageX - elementPositionX;
+                    const elementY = latestEvent.pageY - elementPositionY;
 
                     newState.elementX = elementX;
                     newState.elementY = elementY;
@@ -59,6 +66,7 @@ export function useMouse(
                 }
 
                 setState((s) => ({ ...s, ...newState }));
+                latestEvent = null;
                 rafId = null;
             });
         };

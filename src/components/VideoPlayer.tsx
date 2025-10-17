@@ -25,7 +25,6 @@ export const VideoPlayer = memo<VideoPlayerProps>(
         return (
             <div className="relative">
                 <video
-                    key={videoPath}
                     ref={videoRef}
                     src={`/api/videos/stream?path=${encodeURIComponent(videoPath)}`}
                     onLoadedMetadata={onLoadedMetadata}

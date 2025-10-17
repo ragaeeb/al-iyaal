@@ -12,6 +12,11 @@ export const writeAtomicJson = async (filePath: string, data: any) => {
 
     const tmp = path.format({ dir: os.tmpdir(), ext: '.tmp', name: performance.now().toString() });
 
-    await fs.writeFile(tmp, JSON.stringify(data, null, 2));
-    await fs.rename(tmp, filePath);
+    try {
+        await fs.writeFile(tmp, JSON.stringify(data, null, 2));
+        await fs.rename(tmp, filePath);
+    } catch (error) {
+        await fs.unlink(tmp).catch(() => {});
+        throw error;
+    }
 };

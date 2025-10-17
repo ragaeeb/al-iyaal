@@ -1,11 +1,7 @@
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 import { cn } from '@/lib/utils';
 
-export function ModernAnimatedButton({
-    children,
-    className,
-    ...props
-}: { children: ReactNode; className?: string } & ComponentProps<'button'>) {
+export function ModernAnimatedButton({ children, className, ...props }: ComponentPropsWithoutRef<'button'>) {
     return (
         <>
             <style>
@@ -75,7 +71,7 @@ export function ModernAnimatedButton({
                 )}
                 style={{
                     background:
-                        'conic-gradient(from calc(var(--r2) - 80deg) at var(--x) 15px, transparent 0, #eca5a7 20%, transparent 25%), #452324',
+                        'conic-gradient(from calc(var(--r2, 0deg) - 80deg) at var(--x, 20px) 15px, transparent 0, #eca5a7 20%, transparent 25%), #452324',
                 }}
                 type="button"
                 {...props}

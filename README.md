@@ -85,7 +85,7 @@ bun install
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 PORT=3000
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-2.5-flash-lite  # Fast, cost-effective model for subtitle analysis
 ```
 
 You can provide multiple API keys separated by commas for load balancing:
@@ -192,6 +192,12 @@ al-iyaal/
 List videos in a directory
 - Query: `path` - Directory path
 - Returns: Array of video metadata
+- Example response:
+  ```json
+  [
+    { "name": "video.mp4", "size": 1024000, "duration": 120 }
+  ]
+  ```
 
 ### `GET /api/videos/stream`
 Stream video content with range support
@@ -246,7 +252,7 @@ All criteria and priorities are fully customizable via the Settings page.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Submit a Pull Request to help improve this project.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
