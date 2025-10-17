@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import ffmpeg from 'fluent-ffmpeg';
 import { type NextRequest, NextResponse } from 'next/server';
+import { FFmpeggy } from '@/lib/ffmpegConfig';
 
 type TimeRange = { start: string; end: string };
 
@@ -17,62 +17,6 @@ const parseTimeToSeconds = (time: string): number => {
     }
 
     return seconds;
-};
-
-const sliceVideo = (
-    inputPath: string,
-    outputPath: string,
-    start: number,
-    end: number,
-    onProgress: (percent: number) => void,
-): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        ffmpeg(inputPath)
-            .inputOptions([`-ss ${start}`])
-            .outputOptions(['-c:v libx264', '-c:a aac', '-strict -2', `-threads ${os.cpus().length}`])
-            .duration(end - start)
-            .output(outputPath)
-            .on('progress', (progress) => {
-                if (progress.percent) {
-                    onProgress(Math.round(progress.percent));
-                }
-            })
-            .on('end', resolve)
-            .on('error', reject)
-            .run();
-    });
-};
-
-const mergeVideos = (
-    inputPaths: string[],
-    outputPath: string,
-    onProgress: (percent: number) => void,
-): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
-        const listFilePath = path.join(os.tmpdir(), `merge-${Date.now()}.txt`);
-        const listContent = inputPaths.map((p) => `file '${p}'`).join('\n');
-        await fs.writeFile(listFilePath, listContent);
-
-        ffmpeg()
-            .input(listFilePath)
-            .inputOptions(['-f concat', '-safe 0'])
-            .outputOptions(['-c copy', `-threads ${os.cpus().length}`])
-            .output(outputPath)
-            .on('progress', (progress) => {
-                if (progress.percent) {
-                    onProgress(Math.round(progress.percent));
-                }
-            })
-            .on('end', async () => {
-                await fs.unlink(listFilePath);
-                resolve();
-            })
-            .on('error', async (err) => {
-                await fs.unlink(listFilePath);
-                reject(err);
-            })
-            .run();
-    });
 };
 
 export const POST = async (req: NextRequest) => {
@@ -101,14 +45,21 @@ export const POST = async (req: NextRequest) => {
                     const range = ranges[i];
                     const start = parseTimeToSeconds(range.start);
                     const end = parseTimeToSeconds(range.end);
+                    const duration = end - start;
                     const outputPath = path.join(tempDir, `slice-${i}.mp4`);
 
-                    await sliceVideo(videoPath, outputPath, start, end, (percent) => {
-                        const overallProgress = Math.round(
-                            (i / totalRanges) * 100 + (percent / 100) * (100 / totalRanges),
-                        );
-                        send({ progress: overallProgress });
-                    });
+                    const ffmpeg = new FFmpeggy();
+                    ffmpeg
+                        .setInput(videoPath)
+                        .setInputOptions([`-ss ${start}`])
+                        .setOutputOptions(['-c:v libx264', '-c:a aac', `-t ${duration}`])
+                        .setOutput(outputPath);
+
+                    await ffmpeg.run();
+                    await ffmpeg.done();
+
+                    const overallProgress = Math.round(((i + 1) / totalRanges) * 90);
+                    send({ progress: overallProgress });
 
                     slicedPaths.push(outputPath);
                 }
@@ -123,10 +74,20 @@ export const POST = async (req: NextRequest) => {
                     await fs.rename(slicedPaths[0], outputPath);
                     send({ complete: true, outputPath, progress: 100 });
                 } else {
-                    await mergeVideos(slicedPaths, outputPath, (percent) => {
-                        const mergeProgress = Math.round(90 + (percent / 100) * 10);
-                        send({ progress: mergeProgress });
-                    });
+                    const concatFilePath = path.join(tempDir, 'concat.txt');
+                    const concatContent = slicedPaths.map((p) => `file '${p}'`).join('\n');
+                    await fs.writeFile(concatFilePath, concatContent);
+
+                    const ffmpeg = new FFmpeggy();
+                    ffmpeg
+                        .setInput(concatFilePath)
+                        .setInputOptions(['-f concat', '-safe 0'])
+                        .setOutputOptions(['-c copy'])
+                        .setOutput(outputPath);
+
+                    await ffmpeg.run();
+                    await ffmpeg.done();
+
                     send({ complete: true, outputPath, progress: 100 });
                 }
 
