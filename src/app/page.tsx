@@ -5,7 +5,6 @@ import { useState } from 'react';
 import GlowText from '@/components/cuicui/glow-text';
 import { MainMenusGradientCard } from '@/components/cuicui/gradient-card';
 import AttractButton from '@/components/kokonutui/attract-button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 const HomePage = () => {
@@ -44,7 +43,7 @@ const HomePage = () => {
                             value={inputPath}
                             onChange={(e) => setInputPath(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleList()}
-                            className="h-12 flex-1 border-slate-700 bg-slate-800 text-white placeholder:text-slate-500"
+                            className="h-12 flex-1 border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-blue-400 focus:shadow-[0_0_0_0.2rem_rgba(0,123,255,0.30)] focus:outline-none dark:focus:border-blue-700 dark:focus:shadow-[0_0_0_0.2rem_rgba(0,111,200,0.35)]"
                         />
                         <AttractButton
                             onClick={handleList}

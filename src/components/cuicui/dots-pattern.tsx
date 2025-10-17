@@ -28,7 +28,10 @@ export function DotsPattern({
     return (
         <svg
             aria-hidden="true"
-            className={cn('pointer-events-none absolute inset-0 h-full w-full fill-neutral-400/80', className)}
+            className={cn(
+                'opacity:0.5 pointer-events-none absolute inset-0 h-full w-full fill-neutral-600/80',
+                className,
+            )}
             {...props}
         >
             <defs>

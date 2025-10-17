@@ -38,31 +38,37 @@ export const VideoControls = memo<VideoControlsProps>(
         return (
             <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 overflow-hidden rounded-lg border border-neutral-400/10 bg-neutral-400/10 p-1">
-                        <MagneticBackgroundButton onClick={() => onSkipTime(-5)} className="flex-col gap-1">
+                    <div className="flex h-8 items-center gap-2 overflow-hidden rounded-lg border border-neutral-400/10 bg-neutral-400/10 p-1">
+                        <MagneticBackgroundButton
+                            onClick={() => onSkipTime(-5)}
+                            className="h-6 flex-col gap-1 px-2 py-1"
+                        >
                             <SkipBack className="size-4 text-neutral-400" />
                         </MagneticBackgroundButton>
-                        <MagneticBackgroundButton onClick={onTogglePlayPause} className="flex-col gap-1">
+                        <MagneticBackgroundButton onClick={onTogglePlayPause} className="h-6 flex-col gap-1 px-2 py-1">
                             {isPlaying ? (
                                 <Pause className="size-4 text-neutral-400" />
                             ) : (
                                 <Play className="size-4 text-neutral-400" />
                             )}
                         </MagneticBackgroundButton>
-                        <MagneticBackgroundButton onClick={() => onSkipTime(5)} className="flex-col gap-1">
+                        <MagneticBackgroundButton
+                            onClick={() => onSkipTime(5)}
+                            className="h-6 flex-col gap-1 px-2 py-1"
+                        >
                             <SkipForward className="size-4 text-neutral-400" />
                         </MagneticBackgroundButton>
                     </div>
 
-                    <SimpleModernSlider value={currentTime} max={duration} onChange={onSeek} />
+                    <SimpleModernSlider value={currentTime} max={duration} onChange={onSeek} className="h-8" />
 
-                    <div className="flex flex-shrink-0 items-center gap-2">
+                    <div className="flex h-8 flex-shrink-0 items-center gap-2">
                         <Input
                             value={timeInput || currentTimeFormatted}
                             onChange={(e) => handleTimeInputChange(e.target.value)}
                             onFocus={() => setTimeInput(currentTimeFormatted)}
                             onBlur={() => setTimeInput('')}
-                            className="h-8 w-24 border-slate-700 bg-slate-800 px-2 text-center text-slate-400 text-xs tabular-nums"
+                            className="h-full w-24 border-slate-700 bg-slate-800 px-2 text-center text-slate-400 text-xs tabular-nums"
                         />
                         <span className="text-slate-500 text-xs">/</span>
                         <span className="text-slate-400 text-xs tabular-nums">{durationFormatted}</span>

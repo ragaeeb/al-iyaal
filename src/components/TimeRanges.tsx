@@ -117,9 +117,12 @@ export const TimeRanges = memo<TimeRangesProps>(({ ranges, onAddRange, onRemoveR
                     <Button
                         onClick={addRange}
                         size="icon"
-                        className="h-9 w-9 flex-shrink-0 bg-blue-600 hover:bg-blue-700"
+                        className="group relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-blue-600 bg-blue-600 px-0 py-0 font-medium text-white text-xs transition-colors duration-300 ease-in hover:border-blue-700 hover:bg-blue-700 hover:shadow-blue-500/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus-visible:ring-2"
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="relative z-10 h-4 w-4" />
+                        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-13deg)_translateX(100%)]">
+                            <div className="relative h-full w-10 bg-white/20" />
+                        </div>
                     </Button>
                 </div>
                 <RangeList ranges={ranges} onRemoveRange={onRemoveRange} onSeekToRange={onSeekToRange} />
