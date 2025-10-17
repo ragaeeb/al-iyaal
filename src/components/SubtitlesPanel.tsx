@@ -12,15 +12,14 @@ type SubtitlesPanelProps = {
     subtitles: SubtitleEntry[];
     flaggedSubtitles: FlaggedSubtitle[];
     analyzing: boolean;
-    onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-    onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDrop: (file: File) => void;
     onAnalyze: (strategy: AnalysisStrategy) => void;
     onClear: () => void;
     onSeekToTime: (time: number) => void;
 };
 
 export const SubtitlesPanel = memo<SubtitlesPanelProps>(
-    ({ subtitles, flaggedSubtitles, analyzing, onDrop, onDragOver, onAnalyze, onClear, onSeekToTime }) => {
+    ({ subtitles, flaggedSubtitles, analyzing, onDrop, onAnalyze, onClear, onSeekToTime }) => {
         const [showOnlyConcerning, setShowOnlyConcerning] = useState(false);
 
         const displayedSubtitles = useMemo(() => {
@@ -48,8 +47,18 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         </h2>
                     </div>
                     <button
-                        onDrop={onDrop}
-                        onDragOver={onDragOver}
+                        type="button"
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            const [file] = e.dataTransfer.files;
+
+                            if (file) {
+                                onDrop(file);
+                            }
+                        }}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                        }}
                         className="flex h-32 cursor-pointer items-center justify-center rounded-lg border-2 border-slate-700 border-dashed bg-slate-800/50 transition-colors hover:border-purple-500 hover:bg-slate-800"
                     >
                         <div className="text-center">
@@ -74,7 +83,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                             <Button
                                 size="sm"
                                 disabled={analyzing}
-                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                                className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 ${analyzing ? 'animate-heartbeat' : ''}`}
                             >
                                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                                 {analyzing ? 'Analyzing...' : 'Analyze'}
@@ -97,6 +106,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                                 <>
                                     <span className="text-slate-600">•</span>
                                     <button
+                                        type="button"
                                         onClick={() => setShowOnlyConcerning(!showOnlyConcerning)}
                                         className={`text-sm transition-colors ${
                                             showOnlyConcerning

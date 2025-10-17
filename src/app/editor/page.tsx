@@ -49,10 +49,6 @@ const EditorPage = () => {
         return subtitles.find((sub) => currentTime >= sub.startTime && currentTime <= sub.endTime);
     }, [subtitles, currentTime]);
 
-    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-    }, []);
-
     const handleSeekToRange = useCallback(
         (range: { start: string; end: string }) => {
             const time = parseTimeToSeconds(range.start);
@@ -136,7 +132,6 @@ const EditorPage = () => {
                             flaggedSubtitles={flaggedSubtitles}
                             analyzing={analyzing}
                             onDrop={handleSubtitleDrop}
-                            onDragOver={handleDragOver}
                             onAnalyze={handleAnalyze}
                             onClear={clearSubtitles}
                             onSeekToTime={seekTo}

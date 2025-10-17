@@ -25,24 +25,19 @@ export const useSubtitles = (srtPath?: string) => {
         }
     }, []);
 
-    const handleSubtitleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const file = files[0];
-            if (file.name.endsWith('.srt')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const content = event.target?.result as string;
-                    const parsedSubtitles = parseSrt(content);
-                    setSubtitles(parsedSubtitles);
-                    setFlaggedSubtitles([]);
-                    toast.success('Subtitles loaded successfully');
-                };
-                reader.readAsText(file);
-            } else {
-                toast.error('Please drop a .srt file');
-            }
+    const handleSubtitleDrop = useCallback((file: File) => {
+        if (file.name.endsWith('.srt')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target?.result as string;
+                const parsedSubtitles = parseSrt(content);
+                setSubtitles(parsedSubtitles);
+                setFlaggedSubtitles([]);
+                toast.success('Subtitles loaded successfully');
+            };
+            reader.readAsText(file);
+        } else {
+            toast.error('Please drop a .srt file');
         }
     }, []);
 
