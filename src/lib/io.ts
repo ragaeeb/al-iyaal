@@ -5,7 +5,7 @@ import path from 'node:path';
 /**
  * Writes the file atomically so in case there is a failure it does not result in partial writes with a corrupt file.
  */
-export const writeAtomicJson = async (filePath: string, data: any) => {
+export const writeAtomicJson = async <T>(filePath: string, data: T) => {
     if (!data) {
         throw new Error('Invalid payload');
     }

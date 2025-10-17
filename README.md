@@ -126,7 +126,11 @@ bun start
 
 4. Deploy
 
-**Note:** Ensure your deployment environment has FFmpeg available. Vercel supports FFmpeg by default.
+**Note:** FFmpeg is not available in Vercel's default serverless environment. For production deployment with video processing, consider:
+- **Self-hosted**: Deploy to a VPS (AWS EC2, DigitalOcean, Linode)
+- **Platform-as-a-service**: Render, Railway, Heroku (with buildpack)
+- **Serverless with FFmpeg**: AWS Lambda with custom layer, Google Cloud Functions
+For Vercel deployment, video processing would require proxying to an external FFmpeg service or disabling local video processing.
 
 ## Usage
 

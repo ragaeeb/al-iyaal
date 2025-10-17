@@ -22,7 +22,7 @@ export function ModernAnimatedButton({ children, className, ...props }: Componen
         /* Animated button styles */
 
         .rotation-animation {
-          animation: rotationKeyFrames -.64s linear 3s infinite, translationKeyFrames -.64s linear 3s infinite
+          animation: rotationKeyFrames .64s linear 3s infinite, translationKeyFrames .64s linear 3s infinite
         }
 
         /* Keyframes for rotation */
@@ -66,7 +66,7 @@ export function ModernAnimatedButton({ children, className, ...props }: Componen
             </style>
             <button
                 className={cn(
-                    'rotation-animation conic-gradient transform-gpu cursor-pointer rounded-full p-px shadow-[0_0_20px_0_rgba(245,48,107,0.1)] hue-rotate-[190deg] invert transition-all hover:bg-[#782a2b] hover:shadow-[0_0_20px_3px_rgba(245,49,108,.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#eca5a7] focus-visible:ring-offset-2 dark:hue-rotate-0 dark:invert-0',
+                    'rotation-animation transform-gpu cursor-pointer rounded-full p-px shadow-[0_0_20px_0_rgba(245,48,107,0.1)] hue-rotate-[190deg] invert transition-all hover:bg-[#782a2b] hover:shadow-[0_0_20px_3px_rgba(245,49,108,.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#eca5a7] focus-visible:ring-offset-2 dark:hue-rotate-0 dark:invert-0',
                     className,
                 )}
                 style={{

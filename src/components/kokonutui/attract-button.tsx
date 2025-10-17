@@ -67,7 +67,7 @@ export default function AttractButton({
     return (
         <Button
             className={cn(
-                'relative min-w-40 touch-none',
+                'relative min-w-[10rem] touch-none',
                 'bg-violet-100 dark:bg-violet-900',
                 'hover:bg-violet-200 dark:hover:bg-violet-800',
                 'text-violet-600 dark:text-violet-300',

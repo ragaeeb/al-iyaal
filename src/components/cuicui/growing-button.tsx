@@ -18,13 +18,10 @@ export function GrowingButton({
         >
             {children}
             <span className="w-fit max-w-0 transform-gpu overflow-hidden transition-all duration-500 group-hover:max-w-[12rem] group-focus-visible:max-w-[12rem]">
-                <span
-                    aria-hidden="true"
-                    title={hoverText}
-                    className="transform-gpu whitespace-nowrap text-sm opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
-                >
+                <span className="transform-gpu whitespace-nowrap text-sm opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100">
                     {hoverText}
                 </span>
+                <span className="sr-only">{hoverText}</span>
             </span>
         </button>
     );

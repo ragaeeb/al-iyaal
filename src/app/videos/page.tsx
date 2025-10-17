@@ -85,7 +85,7 @@ const VideosContent = () => {
                         revealDirection="start"
                         useOriginalCharsOnly={false}
                         className="font-azeretMono text-lg text-slate-400"
-                        characters="abcdefghijklmnopqrstuvwxyz!@#$%^&*()_+-=[]{}|;':\,./<>?"
+                        characters="abcdefghijklmnopqrstuvwxyz!@#$%^&*()_+-=[]{}|;':,./<>?"
                     />
                 </div>
 
