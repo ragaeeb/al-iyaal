@@ -42,7 +42,10 @@ const VideosContent = () => {
                     setVideos(data.videos || []);
                 }
             } catch (error) {
-                console.error('Failed to load videos:', error);
+                // Don't log AbortError - it's expected during cleanup
+                if (error instanceof Error && error.name !== 'AbortError') {
+                    console.error('Failed to load videos:', error);
+                }
             } finally {
                 if (!controller.signal.aborted) {
                     setLoading(false);
@@ -52,7 +55,7 @@ const VideosContent = () => {
 
         loadVideos();
 
-        return () => controller.abort?.();
+        return () => controller.abort();
     }, [folderPath, router]);
 
     const handleVideoSelect = (video: VideoFile) => {

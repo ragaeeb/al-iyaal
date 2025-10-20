@@ -14,14 +14,10 @@ export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
                 return;
             }
 
-            console.log('ranges', ranges);
-
             const invalid = ranges.some((r) => {
                 const [start, end] = [r.start, r.end].map(parseTimeToSeconds);
                 return !Number.isFinite(start) || !Number.isFinite(end) || Number(start) < 0 || end <= start;
             });
-
-            console.log('invalid', invalid);
 
             if (invalid) {
                 toast.error('Please ensure each time range has start < end and non-negative values');

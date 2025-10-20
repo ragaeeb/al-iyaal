@@ -242,4 +242,9 @@ Tenth subtitle`;
         expect(result[0].index).toBe(5);
         expect(result[1].index).toBe(10);
     });
+
+    it('should handle carriage returns properly', async () => {
+        const actual = parseSrt(`5\r\n00:00:01,000 --> 00:00:03,000\r\nFirst`);
+        expect(actual).toEqual([{ endTime: 3, index: 5, startTime: 1, text: 'First' }]);
+    });
 });

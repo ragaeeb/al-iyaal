@@ -61,7 +61,7 @@ export const parseSrtTime = (timeString: string) => {
 };
 
 export const parseSrt = (content: string) => {
-    const blocks = content.trim().split('\n\n');
+    const blocks = content.trim().replace(/\r\n/g, '\n').split('\n\n');
     const subtitles: SubtitleEntry[] = [];
 
     for (const block of blocks) {
