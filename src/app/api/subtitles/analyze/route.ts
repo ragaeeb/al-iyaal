@@ -104,7 +104,7 @@ If no issues are found, respond with: {"flagged": [], "summary": "your summary h
                         const originalSub = subtitles.find((s) => Math.abs(s.startTime - item.startTime) < 0.1);
                         return {
                             endTime: originalSub?.endTime || item.startTime + 1,
-                            priority: item.priority,
+                            priority: item.priority.toLocaleLowerCase(),
                             reason: item.reason,
                             startTime: item.startTime,
                             text: originalSub?.text || '',
