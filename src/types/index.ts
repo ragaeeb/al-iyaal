@@ -21,4 +21,4 @@ export type PromptSettings = { contentCriteria: string; priorityGuidelines: stri
 
 export type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
 
-export type VideoQuality = 'high' | 'medium' | 'low' | 'ultralow';
+export type VideoQuality = 'passthrough' | 'high' | 'medium' | 'low' | 'ultralow';

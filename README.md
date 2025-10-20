@@ -20,6 +20,14 @@ A Next.js-based video editor designed for parents to review and edit children's 
 - Automatic subtitle detection (.srt files)
 - Video streaming with range request support
 - Video metadata display (duration, file size)
+- AI-powered automatic transcription generation
+
+### 🎙️ Automatic Transcription
+- Generate transcripts directly from video files using [Tafrigh](https://github.com/ragaeeb/tafrigh)
+- Automatic subtitle (.srt) file creation
+- Word-by-word timestamp accuracy
+- Persistent transcript storage for future sessions
+- Real-time progress updates during transcription
 
 ### ✂️ Video Editing
 - Precise time-range selection for cutting video segments
@@ -27,9 +35,17 @@ A Next.js-based video editor designed for parents to review and edit children's 
 - Keyboard shortcuts for quick navigation
 - Real-time video preview with subtitle display
 - Multi-segment extraction and merging
+- **Multiple quality options:**
+  - **Original Quality (Passthrough)** - No re-encoding, fastest processing, zero quality loss
+  - **High Quality** - 5 Mbps, best for short videos
+  - **Medium Quality** - 2.5 Mbps, balanced approach
+  - **Low Quality** - 1 Mbps, good for long videos
+  - **Ultra Low** - 500 Kbps, smallest file size
+- **Accurate size estimation** based on selected time ranges and quality settings
 
 ### 🤖 AI-Powered Content Analysis
 - Automatic subtitle analysis using Google Gemini AI
+- Two analysis modes: Quick (Flash Lite) and Detailed (Pro)
 - Customizable content filtering criteria
 - Priority-based flagging system (High/Medium/Low)
 - Storyline summary generation
@@ -58,6 +74,7 @@ A Next.js-based video editor designed for parents to review and edit children's 
 - **UI Components:** Radix UI, Tailwind CSS, shadcn/ui
 - **AI:** Google Gemini API
 - **Video Processing:** ffmpeggy v3.1.3
+- **Transcription:** Tafrigh v1.0.0 (Whisper-based)
 - **Animations:** Motion (Framer Motion)
 - **State Management:** React Hooks
 - **Notifications:** Sonner
@@ -126,11 +143,12 @@ bun start
 
 4. Deploy
 
-**Note:** FFmpeg is not available in Vercel's default serverless environment. For production deployment with video processing, consider:
+**Note:** FFmpeg and transcription features are not available in Vercel's default serverless environment. For production deployment with full video processing and transcription, consider:
 - **Self-hosted**: Deploy to a VPS (AWS EC2, DigitalOcean, Linode)
 - **Platform-as-a-service**: Render, Railway, Heroku (with buildpack)
 - **Serverless with FFmpeg**: AWS Lambda with custom layer, Google Cloud Functions
-For Vercel deployment, video processing would require proxying to an external FFmpeg service or disabling local video processing.
+
+For Vercel deployment, video processing and transcription would require proxying to an external service or disabling these features.
 
 ## Usage
 
@@ -139,26 +157,42 @@ For Vercel deployment, video processing would require proxying to an external FF
 - Browse available videos in the selected folder
 - Videos with existing .srt subtitle files will be automatically detected
 
-### 2. Load Subtitles
-- Subtitles are auto-loaded if found alongside the video file
-- Alternatively, drag and drop a .srt file into the subtitles panel
+### 2. Load or Generate Subtitles
+- **Automatic Loading**: Subtitles are auto-loaded if found alongside the video file
+- **Manual Upload**: Drag and drop a .srt file into the subtitles panel
+- **Generate Transcript**: Click "Generate Transcript" to create subtitles from the video audio
+  - Uses AI-powered speech recognition (Whisper model via Tafrigh)
+  - Automatically saves as .srt file next to the video
+  - Shows real-time progress during transcription
 
 ### 3. Analyze Content
 - Click the "Analyze" button in the subtitles panel
-- Choose between "Quick" or "Detailed" analysis
+- Choose between:
+  - **Quick** - Fast analysis using Gemini Flash Lite (recommended for most cases)
+  - **Detailed** - Thorough analysis using Gemini Pro (more accurate but slower)
 - Review flagged content with priority indicators
 - Read the AI-generated storyline summary
+- Filter to show only concerning subtitles
 
 ### 4. Edit Video
 - Use the scissors button to mark time ranges at the current playback position
 - Manually enter time ranges in format: `MM:SS-MM:SS` or `H:MM:SS-H:MM:SS`
 - Click on flagged subtitles to jump to that timestamp
+- Click on time ranges to seek to their start position
+- Edit ranges inline by clicking on the time values
 - Remove unwanted ranges by clicking the X icon
 
 ### 5. Process Video
-- Click "Process Video" to extract selected time ranges
+- Click "Process Video" to see quality options
+- Choose your preferred quality:
+  - **Original Quality (Passthrough)**: No re-encoding, fastest, no quality loss - perfect when you just want to cut segments without changing quality
+  - **High Quality**: Best visual quality, larger file size
+  - **Medium Quality**: Balanced quality and file size
+  - **Low Quality**: Good for long videos, smaller file size
+  - **Ultra Low**: Smallest file size, lower quality
+- View estimated output file size before processing
 - Monitor progress with the real-time progress indicator
-- Processed video will be saved in the same directory as the original
+- Processed video will be saved in the same directory as the original with a timestamp suffix
 
 ### 6. Customize Settings
 - Click the "Settings" button to access configuration
@@ -175,7 +209,7 @@ al-iyaal/
 │   │   ├── api/
 │   │   │   ├── files/          # File serving endpoints
 │   │   │   ├── settings/       # Settings management
-│   │   │   ├── subtitles/      # Subtitle analysis
+│   │   │   ├── subtitles/      # Subtitle analysis & transcription
 │   │   │   └── videos/         # Video operations
 │   │   ├── editor/             # Video editor page
 │   │   ├── settings/           # Settings configuration page
@@ -195,28 +229,41 @@ al-iyaal/
 ### `GET /api/videos/list`
 List videos in a directory
 - Query: `path` - Directory path
-- Returns: Array of video metadata
+- Returns: Array of video metadata with subtitle detection
 - Example response:
   ```json
   [
-    { "name": "video.mp4", "size": 1024000, "duration": 120 }
+    { 
+      "name": "video.mp4", 
+      "size": "1.2 GB", 
+      "duration": "2:15:30",
+      "path": "/path/to/video.mp4",
+      "subtitlePath": "/path/to/video.srt"
+    }
   ]
   ```
 
 ### `GET /api/videos/stream`
 Stream video content with range support
 - Query: `path` - Video file path
-- Returns: Video stream
+- Returns: Video stream with HTTP 206 partial content support
 
 ### `POST /api/videos/process`
 Process video with selected time ranges
-- Body: `{ path: string, ranges: TimeRange[] }`
-- Returns: Server-sent events with progress
+- Body: `{ path: string, ranges: TimeRange[], quality: VideoQuality }`
+- Quality options: `passthrough`, `high`, `medium`, `low`, `ultralow`
+- Returns: Server-sent events with progress updates
 
 ### `POST /api/subtitles/analyze`
-Analyze subtitle content
-- Body: `{ subtitles: SubtitleEntry[] }`
-- Returns: Server-sent events with analysis results
+Analyze subtitle content using AI
+- Body: `{ subtitles: SubtitleEntry[], strategy: 'fast' | 'deep' }`
+- Returns: Server-sent events with analysis results and flagged content
+
+### `POST /api/subtitles/transcribe`
+Generate transcript from video audio
+- Body: `{ videoPath: string }`
+- Returns: Server-sent events with transcription progress and generated subtitles
+- Automatically saves .srt file next to the video
 
 ### `GET /api/settings`
 Retrieve current settings
@@ -253,6 +300,16 @@ All criteria and priorities are fully customizable via the Settings page.
 - Dynamic time formatting based on video duration
 - Efficient subtitle parsing and matching
 - API key rotation for rate limit management
+- Accurate size estimation based on actual range durations
+- Passthrough quality option for zero-loss editing
+- Concurrent chunk processing for faster transcription
+
+## Keyboard Shortcuts
+
+- **Space**: Play/Pause video
+- **Left Arrow**: Skip back 5 seconds
+- **Right Arrow**: Skip forward 5 seconds
+- **Enter**: Add time range (when focused on time range input)
 
 ## Contributing
 
@@ -268,10 +325,11 @@ Contributions are welcome! Submit a Pull Request to help improve this project.
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-# Credits
+## Credits
 
 [edil-ozi.pro](https://www.edil-ozi.pro/)
 [shadcnstudio.com](https://shadcnstudio.com)
+[Tafrigh](https://github.com/ragaeeb/tafrigh) - Audio transcription library
 
 ## Author
 

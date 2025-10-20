@@ -1,14 +1,15 @@
-import path from 'path';
+import path from 'node:path';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { parseSrt } from '@/lib/textUtils';
 import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
 
-export const useSubtitles = (srtPath?: string) => {
+export const useSubtitles = (srtPath?: string, videoPath?: string) => {
     const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
     const [flaggedSubtitles, setFlaggedSubtitles] = useState<FlaggedSubtitle[]>([]);
     const [summary, setSummary] = useState<string>('');
     const [analyzing, setAnalyzing] = useState(false);
+    const [transcriptionStatus, setTranscriptionStatus] = useState<string>('');
     const [subtitleFileName, setSubtitleFileName] = useState<string>('');
 
     const loadSubtitlesFromPath = useCallback(async (filePath: string) => {
@@ -53,6 +54,72 @@ export const useSubtitles = (srtPath?: string) => {
             toast.error('Please drop a .srt file');
         }
     }, []);
+
+    const handleTranscribe = useCallback(async () => {
+        if (!videoPath) {
+            toast.error('No video loaded');
+            return;
+        }
+
+        setTranscriptionStatus('Initializing...');
+
+        try {
+            const response = await fetch('/api/subtitles/transcribe', {
+                body: JSON.stringify({ videoPath }),
+                headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start transcription');
+            }
+
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+
+            if (!reader) {
+                throw new Error('No response body');
+            }
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+
+                        if (data.status === 'preprocessing') {
+                            setTranscriptionStatus(data.message);
+                        } else if (data.status === 'transcribing') {
+                            if (data.progress !== undefined) {
+                                setTranscriptionStatus(`Processing... ${data.progress}%`);
+                            } else {
+                                setTranscriptionStatus(data.message);
+                            }
+                        } else if (data.complete) {
+                            setSubtitles(data.subtitles);
+                            setFlaggedSubtitles([]);
+                            setSummary('');
+                            setSubtitleFileName(path.basename(data.srtPath));
+                            setTranscriptionStatus('');
+                            toast.success('Transcription complete! Subtitles saved.');
+                        } else if (data.error) {
+                            throw new Error(data.error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            setTranscriptionStatus('');
+            toast.error(`Transcription failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }, [videoPath]);
 
     const handleAnalyze = useCallback(
         async (strategy: AnalysisStrategy) => {
@@ -141,8 +208,10 @@ export const useSubtitles = (srtPath?: string) => {
         flaggedSubtitles,
         handleAnalyze,
         handleSubtitleDrop,
+        handleTranscribe,
         subtitleFileName,
         subtitles,
         summary,
+        transcriptionStatus,
     };
 };

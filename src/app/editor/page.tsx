@@ -59,7 +59,9 @@ const EditorContent = () => {
         handleSubtitleDrop,
         handleAnalyze,
         clearSubtitles,
-    } = useSubtitles(srtPath);
+        handleTranscribe,
+        transcriptionStatus,
+    } = useSubtitles(srtPath, videoPath);
 
     const { processing, progress, handleProcess } = useVideoProcessing(videoPath, ranges);
 
@@ -77,28 +79,43 @@ const EditorContent = () => {
         [seekTo],
     );
 
-    // Estimate output size based on duration and quality
+    // Calculate total duration of selected ranges
+    const totalRangesDuration = useMemo(() => {
+        return ranges.reduce((total, range) => {
+            const start = parseTimeToSeconds(range.start);
+            const end = parseTimeToSeconds(range.end);
+            return total + (end - start);
+        }, 0);
+    }, [ranges]);
+
+    // Estimate output size based on ranges duration and quality
     const estimateOutputSize = useCallback(
         (quality: VideoQuality) => {
-            if (!duration) {
+            const durationSec = totalRangesDuration;
+
+            if (durationSec === 0) {
                 return '';
             }
 
-            const durationMin = duration / 60;
+            if (quality === 'passthrough') {
+                return 'Original quality';
+            }
+
+            const durationMin = durationSec / 60;
             let bitrateKbps: number;
 
             switch (quality) {
                 case 'high':
-                    bitrateKbps = 5000; // ~150MB for 4min, ~2.25GB for 1hr
+                    bitrateKbps = 5000;
                     break;
                 case 'medium':
-                    bitrateKbps = 2500; // ~75MB for 4min, ~1.13GB for 1hr
+                    bitrateKbps = 2500;
                     break;
                 case 'low':
-                    bitrateKbps = 1000; // ~30MB for 4min, ~450MB for 1hr
+                    bitrateKbps = 1000;
                     break;
                 case 'ultralow':
-                    bitrateKbps = 500; // ~15MB for 4min, ~225MB for 1hr
+                    bitrateKbps = 500;
                     break;
             }
 
@@ -110,7 +127,7 @@ const EditorContent = () => {
                 return `~${(sizeMB / 1024).toFixed(2)}GB`;
             }
         },
-        [duration],
+        [totalRangesDuration],
     );
 
     return (
@@ -153,11 +170,19 @@ const EditorContent = () => {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleProcess('passthrough')}>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">Original Quality (No Re-encode)</span>
+                                            <span className="text-slate-400 text-xs">
+                                                Fastest • No quality loss • {estimateOutputSize('passthrough')}
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleProcess('high')}>
                                         <div className="flex flex-col">
                                             <span className="font-medium">High Quality</span>
                                             <span className="text-slate-400 text-xs">
-                                                5 Mbps • Best for short videos {estimateOutputSize('high')}
+                                                5 Mbps • Best for short videos • {estimateOutputSize('high')}
                                             </span>
                                         </div>
                                     </DropdownMenuItem>
@@ -165,7 +190,7 @@ const EditorContent = () => {
                                         <div className="flex flex-col">
                                             <span className="font-medium">Medium Quality</span>
                                             <span className="text-slate-400 text-xs">
-                                                2.5 Mbps • Balanced {estimateOutputSize('medium')}
+                                                2.5 Mbps • Balanced • {estimateOutputSize('medium')}
                                             </span>
                                         </div>
                                     </DropdownMenuItem>
@@ -173,7 +198,7 @@ const EditorContent = () => {
                                         <div className="flex flex-col">
                                             <span className="font-medium">Low Quality</span>
                                             <span className="text-slate-400 text-xs">
-                                                1 Mbps • Good for long videos {estimateOutputSize('low')}
+                                                1 Mbps • Good for long videos • {estimateOutputSize('low')}
                                             </span>
                                         </div>
                                     </DropdownMenuItem>
@@ -181,7 +206,7 @@ const EditorContent = () => {
                                         <div className="flex flex-col">
                                             <span className="font-medium">Ultra Low</span>
                                             <span className="text-slate-400 text-xs">
-                                                500 Kbps • Smallest size {estimateOutputSize('ultralow')}
+                                                500 Kbps • Smallest size • {estimateOutputSize('ultralow')}
                                             </span>
                                         </div>
                                     </DropdownMenuItem>
@@ -246,6 +271,8 @@ const EditorContent = () => {
                             onAnalyze={handleAnalyze}
                             onClear={clearSubtitles}
                             onSeekToTime={seekTo}
+                            onTranscribe={handleTranscribe}
+                            transcriptionStatus={transcriptionStatus}
                         />
                     </div>
                 </div>

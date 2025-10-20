@@ -22,6 +22,8 @@ const parseTimeToSeconds = (time: string): number => {
 
 const getQualityOptions = (quality: VideoQuality): string[] => {
     switch (quality) {
+        case 'passthrough':
+            return ['-c copy'];
         case 'high':
             return [
                 '-c:v libx264',
@@ -80,7 +82,7 @@ export const POST = async (req: NextRequest) => {
         return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    if (!quality || !['high', 'medium', 'low', 'ultralow'].includes(quality)) {
+    if (!quality || !['passthrough', 'high', 'medium', 'low', 'ultralow'].includes(quality)) {
         return NextResponse.json({ error: 'Invalid quality parameter' }, { status: 400 });
     }
 
@@ -124,7 +126,7 @@ export const POST = async (req: NextRequest) => {
                 }
 
                 const fileName = path.basename(videoPath, path.extname(videoPath));
-                const qualitySuffix = quality === 'high' ? '' : `_${quality}`;
+                const qualitySuffix = quality === 'passthrough' ? '_original' : quality === 'high' ? '' : `_${quality}`;
                 const outputPath = path.join(
                     path.dirname(videoPath),
                     `${fileName}_edited${qualitySuffix}_${Date.now()}${path.extname(videoPath)}`,

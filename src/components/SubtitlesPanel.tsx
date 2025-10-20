@@ -1,4 +1,4 @@
-import { Sparkles, SubtitlesIcon } from 'lucide-react';
+import { Mic, Sparkles, SubtitlesIcon } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,6 +20,8 @@ type SubtitlesPanelProps = {
     onAnalyze: (strategy: AnalysisStrategy) => void;
     onClear: () => void;
     onSeekToTime: (time: number) => void;
+    onTranscribe: () => void;
+    transcriptionStatus: string;
 };
 
 const getPriorityStyles = (priority: 'high' | 'medium' | 'low') => {
@@ -49,6 +51,8 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
         onClear,
         onSeekToTime,
         subtitleFileName,
+        onTranscribe,
+        transcriptionStatus,
     }) => {
         const [showOnlyConcerning, setShowOnlyConcerning] = useState(false);
 
@@ -74,6 +78,15 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                             <SubtitlesIcon className="h-5 w-5 text-purple-400" />
                             Subtitles
                         </h2>
+                        <Button
+                            size="sm"
+                            disabled={!!transcriptionStatus}
+                            onClick={onTranscribe}
+                            className={`bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 ${transcriptionStatus ? 'animate-pulse' : ''}`}
+                        >
+                            <Mic className="mr-1.5 h-3.5 w-3.5" />
+                            {transcriptionStatus || 'Generate Transcript'}
+                        </Button>
                     </div>
                     <button
                         type="button"
