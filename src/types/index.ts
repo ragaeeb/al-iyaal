@@ -20,3 +20,5 @@ export type AnalysisResult = {
 export type PromptSettings = { contentCriteria: string; priorityGuidelines: string };
 
 export type VideoFile = { name: string; path: string; duration: string; size: string; subtitlePath?: string };
+
+export type VideoQuality = 'high' | 'medium' | 'low' | 'ultralow';

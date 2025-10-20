@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { parseTimeToSeconds } from '@/lib/textUtils';
 import { loadTimeRanges, saveTimeRanges } from '@/lib/timeRangesStorage';
 import type { TimeRange } from '@/types';
 
@@ -23,7 +24,9 @@ export const useTimeRanges = (videoPath: string) => {
     }, [ranges, videoPath, loaded]);
 
     const addRange = useCallback((range: TimeRange) => {
-        setRanges((prev) => [...prev, range]);
+        setRanges((prev) =>
+            [...prev, range].toSorted((a, b) => parseTimeToSeconds(a.start) - parseTimeToSeconds(b.start)),
+        );
     }, []);
 
     const removeRange = useCallback((range: TimeRange) => {

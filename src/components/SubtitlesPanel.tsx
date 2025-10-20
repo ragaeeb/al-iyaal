@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatTime } from '@/lib/textUtils';
 import type { AnalysisStrategy, FlaggedSubtitle, SubtitleEntry } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './cuicui/mac-os-dropdown';
@@ -98,13 +99,27 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
             );
         }
 
+        const titleElement = (
+            <h2 className="flex items-center gap-2 font-semibold text-lg text-white">
+                <SubtitlesIcon className="h-5 w-5 text-purple-400" />
+                {subtitleFileName ?? 'Subtitles'}
+            </h2>
+        );
+
         return (
             <Card className="border-slate-800 bg-slate-900/50 p-4">
                 <div className="mb-3 flex items-center justify-between">
-                    <h2 className="flex items-center gap-2 font-semibold text-lg text-white">
-                        <SubtitlesIcon className="h-5 w-5 text-purple-400" />
-                        {subtitleFileName ?? 'Subtitles'}
-                    </h2>
+                    {summary ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>{titleElement}</TooltipTrigger>
+                            <TooltipContent className="max-w-sm">
+                                <p className="font-medium text-sm">Summary</p>
+                                <p className="mt-1 text-xs">{summary}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : (
+                        titleElement
+                    )}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild={true}>
@@ -123,13 +138,6 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-
-                {summary && (
-                    <div className="mb-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
-                        <p className="font-medium text-blue-400 text-sm">Summary</p>
-                        <p className="mt-1 text-slate-300 text-sm">{summary}</p>
-                    </div>
-                )}
 
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">

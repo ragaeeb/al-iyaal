@@ -3,6 +3,7 @@ import { memo, useCallback, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { CAPTURE_TIME_RANGE_PATTERN } from '@/lib/constants';
 import { formatTime } from '@/lib/textUtils';
 import type { TimeRange } from '@/types';
@@ -19,39 +20,85 @@ type TimeRangesProps = Readonly<{
     duration: number;
 }>;
 
+type EditableRangeProps = {
+    range: TimeRange;
+    onUpdate: (oldRange: TimeRange, newRange: TimeRange) => void;
+    onRemove: (range: TimeRange) => void;
+    onSeek: (range: TimeRange) => void;
+};
+
+const EditableRange = memo<EditableRangeProps>(({ range, onUpdate, onRemove, onSeek }) => {
+    const startInputRef = useRef<HTMLInputElement>(null);
+    const endInputRef = useRef<HTMLInputElement>(null);
+
+    const handleBlur = () => {
+        const startValue = startInputRef.current?.value || range.start;
+        const endValue = endInputRef.current?.value || range.end;
+
+        const newRange = { end: endValue, start: startValue };
+        if (startValue !== range.start || endValue !== range.end) {
+            onUpdate(range, newRange);
+        }
+    };
+
+    return (
+        <Badge
+            variant="secondary"
+            className="group w-full justify-between bg-slate-800 px-2 py-1.5 font-normal text-sm hover:bg-slate-700"
+        >
+            <Button variant="plain" className="flex flex-1 items-center gap-1" onClick={() => onSeek(range)}>
+                <Input
+                    ref={startInputRef}
+                    defaultValue={range.start}
+                    onBlur={handleBlur}
+                    onClick={(e) => e.stopPropagation()}
+                    className="!border-0 !bg-transparent h-6 w-16 px-1.5 text-center text-white text-xs"
+                />
+                <span className="text-slate-500">-</span>
+                <Input
+                    ref={endInputRef}
+                    defaultValue={range.end}
+                    onBlur={handleBlur}
+                    onClick={(e) => e.stopPropagation()}
+                    className="!border-0 !bg-transparent h-6 w-16 px-1.5 text-center text-white text-xs"
+                />
+            </Button>
+            <Button
+                variant="plain"
+                className="ml-2 cursor-pointer p-0 text-slate-400 hover:text-red-400"
+                aria-label="Remove time range"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(range);
+                }}
+            >
+                <X className="h-3.5 w-3.5" />
+            </Button>
+        </Badge>
+    );
+});
+
+EditableRange.displayName = 'EditableRange';
+
 const RangeList = ({
     ranges,
     onSeekToRange,
     onRemoveRange,
-}: Pick<TimeRangesProps, 'ranges' | 'onSeekToRange' | 'onRemoveRange'>) => {
+    onUpdateRange,
+}: Pick<TimeRangesProps, 'ranges' | 'onSeekToRange' | 'onRemoveRange'> & {
+    onUpdateRange: (oldRange: TimeRange, newRange: TimeRange) => void;
+}) => {
     return (
         <div className="max-h-[300px] space-y-1.5 overflow-y-auto">
-            {ranges.map((range) => {
-                const rangeId = `${range.start}-${range.end}`;
-                return (
-                    <Badge
-                        key={rangeId}
-                        variant="secondary"
-                        className="group w-full cursor-pointer justify-between bg-slate-800 px-3 py-2 font-normal text-sm hover:bg-slate-700"
-                        onClick={() => onSeekToRange(range)}
-                    >
-                        <span className="text-white">
-                            {range.start} - {range.end}
-                        </span>
-                        <button
-                            type="button"
-                            className="cursor-pointer p-0 text-slate-400 hover:text-red-400"
-                            aria-label="Remove time range"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemoveRange(range);
-                            }}
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
-                    </Badge>
-                );
-            })}
+            {ranges.map((range) => (
+                <EditableRange
+                    key={`${range.start}-${range.end}`}
+                    range={range}
+                    onUpdate={onUpdateRange}
+                    onRemove={onRemoveRange}
+                    onSeek={onSeekToRange}
+                />
+            ))}
         </div>
     );
 };
@@ -75,6 +122,14 @@ export const TimeRanges = memo<TimeRangesProps>(
                 }
             }
         }, [onAddRange]);
+
+        const handleUpdateRange = useCallback(
+            (oldRange: TimeRange, newRange: TimeRange) => {
+                onRemoveRange(oldRange);
+                onAddRange(newRange);
+            },
+            [onRemoveRange, onAddRange],
+        );
 
         return (
             <Card className="border-slate-800 bg-slate-900/50 p-4">
@@ -125,7 +180,12 @@ export const TimeRanges = memo<TimeRangesProps>(
                             </div>
                         </Button>
                     </div>
-                    <RangeList ranges={ranges} onRemoveRange={onRemoveRange} onSeekToRange={onSeekToRange} />
+                    <RangeList
+                        ranges={ranges}
+                        onRemoveRange={onRemoveRange}
+                        onSeekToRange={onSeekToRange}
+                        onUpdateRange={handleUpdateRange}
+                    />
                 </div>
             </Card>
         );

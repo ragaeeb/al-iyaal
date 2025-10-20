@@ -1,9 +1,15 @@
 'use client';
 
-import { HardDrive, Settings } from 'lucide-react';
+import { HardDrive, Settings, Video } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useMemo } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import CallToAction from '@/components/cuicui/call-to-action';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/cuicui/mac-os-dropdown';
 import { ModernAnimatedButton } from '@/components/cuicui/modern-animated-button';
 import { CascadeLoader } from '@/components/loaders/CascadeLoader';
 import { ProcessingProgress } from '@/components/ProcessingProgress';
@@ -20,6 +26,7 @@ import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { useVideoRemount } from '@/hooks/useVideoRemount';
 import { parseTimeToSeconds } from '@/lib/textUtils';
+import type { VideoQuality } from '@/types';
 
 const EditorContent = () => {
     const searchParams = useSearchParams();
@@ -70,6 +77,42 @@ const EditorContent = () => {
         [seekTo],
     );
 
+    // Estimate output size based on duration and quality
+    const estimateOutputSize = useCallback(
+        (quality: VideoQuality) => {
+            if (!duration) {
+                return '';
+            }
+
+            const durationMin = duration / 60;
+            let bitrateKbps: number;
+
+            switch (quality) {
+                case 'high':
+                    bitrateKbps = 5000; // ~150MB for 4min, ~2.25GB for 1hr
+                    break;
+                case 'medium':
+                    bitrateKbps = 2500; // ~75MB for 4min, ~1.13GB for 1hr
+                    break;
+                case 'low':
+                    bitrateKbps = 1000; // ~30MB for 4min, ~450MB for 1hr
+                    break;
+                case 'ultralow':
+                    bitrateKbps = 500; // ~15MB for 4min, ~225MB for 1hr
+                    break;
+            }
+
+            const sizeMB = (bitrateKbps * durationMin * 60) / (8 * 1024);
+
+            if (sizeMB < 1024) {
+                return `~${Math.round(sizeMB)}MB`;
+            } else {
+                return `~${(sizeMB / 1024).toFixed(2)}GB`;
+            }
+        },
+        [duration],
+    );
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="container mx-auto max-w-[1800px] px-6 py-6">
@@ -99,13 +142,51 @@ const EditorContent = () => {
                             <Settings />
                         </Button>
                         {!processing && (
-                            <Button
-                                onClick={handleProcess}
-                                disabled={ranges.length === 0}
-                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            >
-                                Process Video
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild={true}>
+                                    <Button
+                                        disabled={ranges.length === 0}
+                                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                    >
+                                        <Video className="mr-2 h-4 w-4" />
+                                        Process Video
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleProcess('high')}>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">High Quality</span>
+                                            <span className="text-slate-400 text-xs">
+                                                5 Mbps • Best for short videos {estimateOutputSize('high')}
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleProcess('medium')}>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">Medium Quality</span>
+                                            <span className="text-slate-400 text-xs">
+                                                2.5 Mbps • Balanced {estimateOutputSize('medium')}
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleProcess('low')}>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">Low Quality</span>
+                                            <span className="text-slate-400 text-xs">
+                                                1 Mbps • Good for long videos {estimateOutputSize('low')}
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleProcess('ultralow')}>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">Ultra Low</span>
+                                            <span className="text-slate-400 text-xs">
+                                                500 Kbps • Smallest size {estimateOutputSize('ultralow')}
+                                            </span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                         {processing && (
                             <ModernAnimatedButton>

@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type NextRequest, NextResponse } from 'next/server';
 import { FFmpeggy } from '@/lib/ffmpegConfig';
+import type { VideoQuality } from '@/types';
 
 type TimeRange = { start: string; end: string };
 
@@ -19,11 +20,68 @@ const parseTimeToSeconds = (time: string): number => {
     return seconds;
 };
 
+const getQualityOptions = (quality: VideoQuality): string[] => {
+    switch (quality) {
+        case 'high':
+            return [
+                '-c:v libx264',
+                '-preset medium',
+                '-crf 20',
+                '-b:v 5000k',
+                '-maxrate 6000k',
+                '-bufsize 12000k',
+                '-c:a aac',
+                '-b:a 192k',
+            ];
+        case 'medium':
+            return [
+                '-c:v libx264',
+                '-preset medium',
+                '-crf 23',
+                '-b:v 2500k',
+                '-maxrate 3000k',
+                '-bufsize 6000k',
+                '-c:a aac',
+                '-b:a 128k',
+            ];
+        case 'low':
+            return [
+                '-c:v libx264',
+                '-preset fast',
+                '-crf 26',
+                '-b:v 1000k',
+                '-maxrate 1200k',
+                '-bufsize 2400k',
+                '-c:a aac',
+                '-b:a 96k',
+            ];
+        case 'ultralow':
+            return [
+                '-c:v libx264',
+                '-preset fast',
+                '-crf 28',
+                '-b:v 500k',
+                '-maxrate 600k',
+                '-bufsize 1200k',
+                '-c:a aac',
+                '-b:a 64k',
+            ];
+    }
+};
+
 export const POST = async (req: NextRequest) => {
-    const { path: videoPath, ranges }: { path: string; ranges: TimeRange[] } = await req.json();
+    const {
+        path: videoPath,
+        ranges,
+        quality,
+    }: { path: string; ranges: TimeRange[]; quality: VideoQuality } = await req.json();
 
     if (!videoPath || !ranges || ranges.length === 0) {
         return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+    }
+
+    if (!quality || !['high', 'medium', 'low', 'ultralow'].includes(quality)) {
+        return NextResponse.json({ error: 'Invalid quality parameter' }, { status: 400 });
     }
 
     const encoder = new TextEncoder();
@@ -40,6 +98,7 @@ export const POST = async (req: NextRequest) => {
 
                 const slicedPaths: string[] = [];
                 const totalRanges = ranges.length;
+                const qualityOptions = getQualityOptions(quality);
 
                 for (let i = 0; i < ranges.length; i++) {
                     const range = ranges[i];
@@ -52,7 +111,7 @@ export const POST = async (req: NextRequest) => {
                     ffmpeg
                         .setInput(videoPath)
                         .setInputOptions([`-ss ${start}`])
-                        .setOutputOptions(['-c:v libx264', '-c:a aac', `-t ${duration}`])
+                        .setOutputOptions([...qualityOptions, `-t ${duration}`])
                         .setOutput(outputPath);
 
                     await ffmpeg.run();
@@ -65,9 +124,10 @@ export const POST = async (req: NextRequest) => {
                 }
 
                 const fileName = path.basename(videoPath, path.extname(videoPath));
+                const qualitySuffix = quality === 'high' ? '' : `_${quality}`;
                 const outputPath = path.join(
                     path.dirname(videoPath),
-                    `${fileName}_edited_${Date.now()}${path.extname(videoPath)}`,
+                    `${fileName}_edited${qualitySuffix}_${Date.now()}${path.extname(videoPath)}`,
                 );
 
                 if (slicedPaths.length === 1) {
