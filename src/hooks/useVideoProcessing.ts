@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+import { parseTimeToSeconds } from '@/lib/textUtils';
 import type { TimeRange } from '@/types';
 
 export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
@@ -12,10 +13,14 @@ export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
             return;
         }
 
+        console.log('ranges', ranges);
+
         const invalid = ranges.some((r) => {
-            const [start, end] = [r.start, r.end].map(Number);
+            const [start, end] = [r.start, r.end].map(parseTimeToSeconds);
             return !Number.isFinite(start) || !Number.isFinite(end) || Number(start) < 0 || end <= start;
         });
+
+        console.log('invalid', invalid);
 
         if (invalid) {
             toast.error('Please ensure each time range has start < end and non-negative values');
@@ -64,14 +69,7 @@ export const useVideoProcessing = (videoPath: string, ranges: TimeRange[]) => {
                             setProcessing(false);
                             setProgress(100);
 
-                            toast.success('Video processed successfully!', {
-                                action: {
-                                    label: 'Open',
-                                    onClick: () => {
-                                        window.open(`file://${data.outputPath}`, '_blank');
-                                    },
-                                },
-                            });
+                            toast.success(`Video processed successfully! Please go to ${data.outputPath}`);
                         }
 
                         if (data.error) {

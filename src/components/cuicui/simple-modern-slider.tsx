@@ -54,7 +54,7 @@ export const SimpleModernSlider = memo<SimpleModernSliderProps>(
                     aria-valuemax={max}
                     aria-valuenow={value}
                     className={cn(
-                        'w-full cursor-col-resize appearance-none bg-transparent outline-hidden transition-all focus:outline-hidden active:scale-105',
+                        'w-full cursor-col-resize appearance-none bg-transparent outline-hidden transition-all focus:outline-hidden active:scale-101',
                         'disabled:pointer-events-none disabled:opacity-50',
                         // Mozilla Firefox styles
                         '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-1 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-slate-200',

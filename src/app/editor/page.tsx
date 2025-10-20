@@ -1,8 +1,8 @@
 'use client';
 
-import { Settings } from 'lucide-react';
+import { HardDrive, Settings } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo } from 'react';
 import CallToAction from '@/components/cuicui/call-to-action';
 import { ModernAnimatedButton } from '@/components/cuicui/modern-animated-button';
 import { CascadeLoader } from '@/components/loaders/CascadeLoader';
@@ -14,18 +14,21 @@ import { Card } from '@/components/ui/card';
 import { VideoControls } from '@/components/VideoControls';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { useSubtitles } from '@/hooks/useSubtitles';
+import { useTimeRanges } from '@/hooks/useTimeRanges';
+import { useVideoMetadata } from '@/hooks/useVideoMetadata';
 import { useVideoPlayer } from '@/hooks/useVideoPlayer';
 import { useVideoProcessing } from '@/hooks/useVideoProcessing';
 import { useVideoRemount } from '@/hooks/useVideoRemount';
 import { parseTimeToSeconds } from '@/lib/textUtils';
-import type { TimeRange } from '@/types';
 
 const EditorContent = () => {
     const searchParams = useSearchParams();
-    const [ranges, setRanges] = useState<TimeRange[]>([]);
     const videoPath = searchParams.get('path') || '';
     const srtPath = searchParams.get('srt') || undefined;
     const router = useRouter();
+
+    const { ranges, addRange, removeRange } = useTimeRanges(videoPath);
+    const { metadata } = useVideoMetadata(videoPath);
 
     const {
         videoRef,
@@ -40,8 +43,16 @@ const EditorContent = () => {
         seekTo,
     } = useVideoPlayer();
 
-    const { subtitles, flaggedSubtitles, analyzing, summary, handleSubtitleDrop, handleAnalyze, clearSubtitles } =
-        useSubtitles(srtPath);
+    const {
+        subtitles,
+        flaggedSubtitles,
+        analyzing,
+        summary,
+        subtitleFileName,
+        handleSubtitleDrop,
+        handleAnalyze,
+        clearSubtitles,
+    } = useSubtitles(srtPath);
 
     const { processing, progress, handleProcess } = useVideoProcessing(videoPath, ranges);
 
@@ -59,31 +70,33 @@ const EditorContent = () => {
         [seekTo],
     );
 
-    const addRange = useCallback((range: TimeRange) => {
-        setRanges((prev) => prev.concat(range));
-    }, []);
-
-    const removeRange = useCallback((range: TimeRange) => {
-        setRanges((prev) => prev.filter((r) => r !== range));
-    }, []);
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
             <div className="container mx-auto max-w-[1800px] px-6 py-6">
-                <div className="mb-4 flex items-center justify-between">
-                    <CallToAction onClick={router.back} pillText="Videos">
-                        Back to
-                    </CallToAction>
+                <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <CallToAction onClick={router.back} pillText="Videos">
+                            Back to
+                        </CallToAction>
 
-                    <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                            {metadata && (
+                                <div className="flex items-center gap-1.5 text-slate-400 text-sm">
+                                    <HardDrive className="h-4 w-4 flex-shrink-0" />
+                                    <span>{metadata.size}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-shrink-0 items-center gap-3">
                         <Button
                             onClick={() => router.push('/settings')}
                             variant="outline"
                             size="sm"
                             className="border-slate-700 bg-slate-800 hover:bg-slate-700"
                         >
-                            <Settings className="mr-2 h-4 w-4" />
-                            Settings
+                            <Settings />
                         </Button>
                         {!processing && (
                             <Button
@@ -146,6 +159,7 @@ const EditorContent = () => {
                             flaggedSubtitles={flaggedSubtitles}
                             analyzing={analyzing}
                             summary={summary}
+                            subtitleFileName={subtitleFileName}
                             duration={duration}
                             onDrop={handleSubtitleDrop}
                             onAnalyze={handleAnalyze}

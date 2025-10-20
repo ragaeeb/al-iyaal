@@ -13,6 +13,7 @@ type SubtitlesPanelProps = {
     flaggedSubtitles: FlaggedSubtitle[];
     analyzing: boolean;
     summary: string;
+    subtitleFileName: string;
     duration: number;
     onDrop: (file: File) => void;
     onAnalyze: (strategy: AnalysisStrategy) => void;
@@ -31,22 +32,36 @@ const getPriorityStyles = (priority: 'high' | 'medium' | 'low') => {
     }
 };
 
+const isWithinAcceptableRange = (f: FlaggedSubtitle, startTime: number, tolerance = 0.5) => {
+    return Math.abs(f.startTime - startTime) < tolerance;
+};
+
 export const SubtitlesPanel = memo<SubtitlesPanelProps>(
-    ({ subtitles, flaggedSubtitles, analyzing, summary, duration, onDrop, onAnalyze, onClear, onSeekToTime }) => {
+    ({
+        subtitles,
+        flaggedSubtitles,
+        analyzing,
+        summary,
+        duration,
+        onDrop,
+        onAnalyze,
+        onClear,
+        onSeekToTime,
+        subtitleFileName,
+    }) => {
         const [showOnlyConcerning, setShowOnlyConcerning] = useState(false);
 
         const displayedSubtitles = useMemo(() => {
             if (!showOnlyConcerning) {
                 return subtitles;
             }
-            const flaggedTimes = new Set(flaggedSubtitles.map((f) => f.startTime));
-            return subtitles.filter((sub) => flaggedTimes.has(sub.startTime));
+            return subtitles.filter((sub) => flaggedSubtitles.some((f) => isWithinAcceptableRange(f, sub.startTime)));
         }, [subtitles, flaggedSubtitles, showOnlyConcerning]);
 
         const concerningCount = flaggedSubtitles.length;
 
         const getFlaggedData = useCallback(
-            (startTime: number) => flaggedSubtitles.find((f) => Math.abs(f.startTime - startTime) < 0.1),
+            (startTime: number) => flaggedSubtitles.find((f) => isWithinAcceptableRange(f, startTime)),
             [flaggedSubtitles],
         );
 
@@ -88,7 +103,7 @@ export const SubtitlesPanel = memo<SubtitlesPanelProps>(
                 <div className="mb-3 flex items-center justify-between">
                     <h2 className="flex items-center gap-2 font-semibold text-lg text-white">
                         <SubtitlesIcon className="h-5 w-5 text-purple-400" />
-                        Subtitles
+                        {subtitleFileName ?? 'Subtitles'}
                     </h2>
 
                     <DropdownMenu>

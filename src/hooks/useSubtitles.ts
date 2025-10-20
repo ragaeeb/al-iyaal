@@ -1,3 +1,4 @@
+import path from 'path';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { parseSrt } from '@/lib/textUtils';
@@ -8,6 +9,7 @@ export const useSubtitles = (srtPath?: string) => {
     const [flaggedSubtitles, setFlaggedSubtitles] = useState<FlaggedSubtitle[]>([]);
     const [summary, setSummary] = useState<string>('');
     const [analyzing, setAnalyzing] = useState(false);
+    const [subtitleFileName, setSubtitleFileName] = useState<string>('');
 
     const loadSubtitlesFromPath = useCallback(async (filePath: string) => {
         try {
@@ -18,6 +20,7 @@ export const useSubtitles = (srtPath?: string) => {
                 setSubtitles(parsedSubtitles);
                 setFlaggedSubtitles([]);
                 setSummary('');
+                setSubtitleFileName(path.basename(filePath));
                 toast.success('Subtitles loaded automatically');
             } else {
                 const msg = `Failed to load subtitles (HTTP ${response.status})`;
@@ -39,6 +42,7 @@ export const useSubtitles = (srtPath?: string) => {
                 setSubtitles(parsedSubtitles);
                 setFlaggedSubtitles([]);
                 setSummary('');
+                setSubtitleFileName(file.name);
                 toast.success('Subtitles loaded successfully');
             };
             reader.onerror = () => {
@@ -122,6 +126,7 @@ export const useSubtitles = (srtPath?: string) => {
         setSubtitles([]);
         setFlaggedSubtitles([]);
         setSummary('');
+        setSubtitleFileName('');
     }, []);
 
     useEffect(() => {
@@ -130,5 +135,14 @@ export const useSubtitles = (srtPath?: string) => {
         }
     }, [srtPath, loadSubtitlesFromPath]);
 
-    return { analyzing, clearSubtitles, flaggedSubtitles, handleAnalyze, handleSubtitleDrop, subtitles, summary };
+    return {
+        analyzing,
+        clearSubtitles,
+        flaggedSubtitles,
+        handleAnalyze,
+        handleSubtitleDrop,
+        subtitleFileName,
+        subtitles,
+        summary,
+    };
 };
